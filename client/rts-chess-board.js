@@ -82,4 +82,4 @@ class RtsChessBoard {
   }
 }
 
-Modules.RtsChessBoard = RtsChessBoard;
+Module.RtsChessBoard = RtsChessBoard;

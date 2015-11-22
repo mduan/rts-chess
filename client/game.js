@@ -20,11 +20,17 @@ Router.route('/', function() {
         oppUser: oppUser
       });
 
-      console.log('game', game);
+      var moves = Collections.Move.find(
+        {gameId: game._id},
+        {sort: {moveIdx: 1}}
+      ).fetch();
 
       self.render('game', {
         data: function() {
-          return {game: game};
+          return {
+            game: game,
+            moves: moves
+          };
         }
       });
     });
@@ -36,9 +42,11 @@ Router.route('/', function() {
 Template.game.onRendered(function() {
   var game = this.data.game;
   new Module.RtsChessBoard({
+    gameId: game._id,
+    moves: this.data.moves,
+    orientation: game.myUser.playOrder === 0 ? 'white' : 'black',
     $board: $('#board'),
     $pgn: $('#pgn'),
-    $status: $('#status'),
-    orientation: game.myUser.playOrder === 0 ? 'white' : 'black'
+    $status: $('#status')
   });
 });

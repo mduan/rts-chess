@@ -14,7 +14,8 @@ class RtsChessBoard {
       showNotation: false,
       onDragStart: this.onDragStart.bind(this),
       onDrop: this.onDrop.bind(this),
-      onSnapEnd: this.onSnapEnd.bind(this)
+      onSnapEnd: this.onSnapEnd.bind(this),
+      orientation: options.orientation
     });
     this.updateStatus();
   }

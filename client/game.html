@@ -1,0 +1,15 @@
+<template name="game">
+  <h1>RTS Chess</h1>
+
+  <div id="board" style="width: 400px"></div>
+  {{#with game}}
+    {{#with myUser}}
+      <p id="myUsername">Me: {{username}}</p>
+    {{/with}}
+    {{#with oppUser}}
+      <p id="oppUsername">Opponent: {{username}}</p>
+    {{/with}}
+  {{/with}}
+  <p>Status: <span id="status"></span></p>
+  <p>PGN: <span id="pgn"></span></p>
+</template>

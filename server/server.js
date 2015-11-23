@@ -25,11 +25,13 @@ Meteor.methods({
       ]
     });
     if (existingGame) {
+      var updateData = {startTime: new Date()};
       if (!existingGame.whiteUserId) {
-        Game.update(existingGame._id, {$set: {whiteUserId: userId}});
+        updateData.whiteUserId = userId;
       } else {
-        Game.update(existingGame._id, {$set: {blackUserId: userId}});
+        updateData.blackUserId = userId;
       }
+      Game.update(existingGame._id, {$set: updateData});
       return existingGame._id;
     }
 

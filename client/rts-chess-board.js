@@ -37,6 +37,10 @@ class RtsChessBoard {
     });
   }
 
+  destroy() {
+    this.board.destroy();
+  }
+
   // do not pick up pieces if the game is over
   // only pick up pieces for the side to move
   onDragStart(source, piece, position, orientation) {

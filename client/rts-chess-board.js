@@ -9,26 +9,21 @@ class RtsChessBoard {
     this.moves = required(options.moves);
     this.color = required(options.color);
     this.$board = required(options.$board);
-    this.initBoard();
-    this.game = new Module.RtsChess({position: this.board.position()});
-  }
-
-  initBoard() {
-    var self = this;
 
     if (this.moves.length) {
       var lastMove = this.moves[this.moves.length - 1];
-      var position = lastMove.position;
+      this.game = new Module.RtsChess({position: lastMove.position});
     } else {
-      var position = 'start';
+      this.game = new Module.RtsChess();
     }
+
     this.board = ChessBoard(this.$board, {
       draggable: true,
       onDragStart: this.onDragStart.bind(this),
       onDrop: this.onDrop.bind(this),
       orientation: this.color === Module.RtsChess.WHITE ? 'white' : 'black',
       pieceTheme: '/img/chesspieces/wikipedia/{piece}.png',
-      position: position,
+      position: this.game.getPosition(),
       showNotation: false
     });
   }
@@ -44,17 +39,22 @@ class RtsChessBoard {
   }
 
   onDrop(source, target) {
-    // see if the move is legal
-    var valid = this.game.makeMove({
+    var isValid = this.game.makeMove({
       source: source,
       target: target,
       color: this.color
     });
 
-    // illegal move
-    if (!valid) {
+    if (!isValid) {
       return 'snapback';
     }
+
+    Meteor.call('makeMove', {
+      gameId: this.gameId,
+      source: source,
+      target, target,
+      color: this.color
+    });
   }
 }
 

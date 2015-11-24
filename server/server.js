@@ -1,13 +1,19 @@
 var Game = Collections.Game;
 var Move = Collections.Move;
+var RtsChess = Module.RtsChess;
 var required = Module.Helper.required;
 
 Meteor.methods({
-  removeGames: function() {
+  reset: function() {
+    Meteor.call('resetGames');
+    Meteor.call('resetMoves');
+  },
+
+  resetGames: function() {
     Game.remove({});
   },
 
-  removeMoves: function() {
+  resetMoves: function() {
     Move.remove({});
   },
 
@@ -41,9 +47,9 @@ Meteor.methods({
 
   startGame: function(options) {
     var gameId = required(options.gameId);
-    var userId = required(options.userId);
+    var userId = required(options.color);
     var game = Game.findOne(gameId);
-    if (userId === game.whiteUserId) {
+    if (color === RtsChess.WHITE) {
       Game.update(game._id, {$set: {whiteUserReady: true}});
     } else {
       Game.update(game._id, {$set: {blackUserReady: true}});
@@ -54,5 +60,41 @@ Meteor.methods({
 
   makeMove: function(options) {
     var gameId = required(options.gameId);
+    var source = required(options.source);
+    var target = required(options.target);
+    var color = required(options.color);
+
+    var lastMove = Move.find(
+      {gameId: gameId},
+      {sort: {moveIdx: -1}, limit: 1}
+    ).fetch();
+    var position = lastMove ? lastMove.position : RtsChess.START_POSITION;
+    var chess = new RtsChess({position: position});
+
+    var isValid = chess.makeMove({
+      source: source,
+      target: target,
+      color: color
+    });
+
+    if (isValid) {
+      var numMoves = Collections.Move.find({gameId: gameId}).count();
+      Collections.Move.insert({
+        gameId: gameId,
+        moveIdx: numMoves,
+        source: source,
+        target: target,
+        color: color,
+        position: chess.getPosition()
+      });
+
+      if (chess.getWinner()) {
+        Collections.Game.update(gameId, {$set: {winner: chess.getWinner()}});
+      }
+
+      return true;
+    } else {
+      return false;
+    }
   }
 });

@@ -9,9 +9,45 @@ var KNIGHT = 'N';
 var ROOK = 'R';
 var PAWN = 'P';
 
+var START_POSITION = {
+  a8: 'bR',
+  b8: 'bN',
+  c8: 'bB',
+  d8: 'bQ',
+  e8: 'bK',
+  f8: 'bB',
+  g8: 'bN',
+  h8: 'bR',
+  a7: 'bP',
+  b7: 'bP',
+  c7: 'bP',
+  d7: 'bP',
+  e7: 'bP',
+  f7: 'bP',
+  g7: 'bP',
+  h7: 'bP',
+  a2: 'wP',
+  b2: 'wP',
+  c2: 'wP',
+  d2: 'wP',
+  e2: 'wP',
+  f2: 'wP',
+  g2: 'wP',
+  h2: 'wP',
+  a1: 'wR',
+  b1: 'wN',
+  c1: 'wB',
+  d1: 'wQ',
+  e1: 'wK',
+  f1: 'wB',
+  g1: 'wN',
+  h1: 'wR'
+}
+
 class RtsChess {
   constructor(options) {
-    this.position = required(options.position);
+    options = options || {};
+    this.position = options.position || START_POSITION;
     this.computeWinner();
   }
 
@@ -193,25 +229,6 @@ class RtsChess {
     return true;
   }
 
-  saveMove(source, target) {
-    var numMoves = Collections.Move.find({gameId: this.gameId}).count();
-    Collections.Move.insert({
-      gameId: this.gameId,
-      moveIdx: numMoves,
-      source: source,
-      target: target,
-      color: this.color,
-      position: this.position
-    });
-
-    if (this.getWinner()) {
-      Collections.Game.update(
-        this.gameId,
-        {$set: {winner: this.getWinner()}}
-      );
-    }
-  }
-
   getWinner() {
     return this.winner;
   }
@@ -238,5 +255,6 @@ class RtsChess {
 
 RtsChess.BLACK = BLACK;
 RtsChess.WHITE = WHITE;
+RtsChess.START_POSITION = START_POSITION;
 
 Module.RtsChess = RtsChess;

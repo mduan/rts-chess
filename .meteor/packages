@@ -21,3 +21,4 @@ insecure                # Allow all DB writes from clients (for prototyping)
 fourseven:scss
 iron:router
 reactive-var
+u2622:persistent-session

@@ -3,31 +3,9 @@ Router.route('/', function() {
   var userId = Meteor.userId();
   if (userId) {
     Meteor.call('getGameId', function(error, gameId) {
-      var game = Collections.Game.findOne(gameId);
-      var myUser = Meteor.user();
-
-      if (game.startTime) {
-        if (game.whiteUserId === userId) {
-          myUser = _.extend(myUser, {playOrder: 0});
-          var oppUser = Meteor.users.findOne(game.blackUserId);
-          oppUser = _.extend(oppUser, {playOrder: 1});
-        } else {
-          myUser = _.extend(myUser, {playOrder: 1});
-          var oppUser = Meteor.users.findOne(game.whiteUserId);
-          oppUser = _.extend(oppUser, {playOrder: 0});
-        }
-      } else {
-        var oppUser = null;
-      }
-
-      game = _.extend(game, {
-        myUser: myUser,
-        oppUser: oppUser
-      });
-
       self.render('game', {
         data: function() {
-          return {game: game};
+          return {gameId: gameId};
         }
       });
     });
@@ -36,28 +14,61 @@ Router.route('/', function() {
   }
 });
 
-Template.game.onRendered(function() {
-  var self = this;
+Template.game.helpers({
+  game: function() {
+    var RtsChess = Module.RtsChess;
 
-  Tracker.autorun(function() {
-    if (self.rtsChessBoard) {
-      self.rtsChessBoard.destroy();
+    var game = Collections.Game.findOne(this.gameId);
+    var myUser = Meteor.user();
+
+    if (game.whiteUserId === myUser._id) {
+      myUser = _.extend(myUser, {color: RtsChess.WHITE});
+      if (game.blackUserId) {
+        var oppUser = Meteor.users.findOne(game.blackUserId);
+        oppUser = _.extend(oppUser, {color: RtsChess.BLACK});
+      }
+    } else {
+      myUser = _.extend(myUser, {color: RtsChess.BLACK});
+      if (game.whiteUserId) {
+        var oppUser = Meteor.users.findOne(game.whiteUserId);
+        oppUser = _.extend(oppUser, {color: RtsChess.WHITE});
+      }
     }
 
-    var game = self.data.game;
-
+    // TODO(mduan): Move this into separate Tracker.autorun
     var moves = Collections.Move.find(
       {gameId: game._id},
       {sort: {moveIdx: 1}}
     ).fetch();
 
+    _.extend(game, {
+      myUser: myUser,
+      oppUser: oppUser,
+      moves: moves
+    });
+
+    Template.instance().game.set(game);
+    return game;
+  }
+});
+
+Template.game.onCreated(function() {
+  this.game = new ReactiveVar();
+});
+
+Template.game.onRendered(function() {
+  var self = this;
+  this.autorun(function() {
+    if (self.rtsChessBoard) {
+      self.rtsChessBoard.destroy();
+    }
+
+    var game = self.game.get();
     self.rtsChessBoard = new Module.RtsChessBoard({
       gameId: game._id,
-      moves: moves,
-      orientation: game.myUser.playOrder === 0 ? 'white' : 'black',
-      $board: $('#board'),
-      $pgn: $('#pgn'),
-      $status: $('#status')
+      moves: game.moves,
+      color: game.myUser.color,
+      $board: $('#board')
     });
   });
 });

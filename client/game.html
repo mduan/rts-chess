@@ -1,15 +1,25 @@
 <template name="game">
   <h1>RTS Chess</h1>
 
-  <div id="board" style="width: 400px"></div>
-  {{#with game}}
-    {{#with myUser}}
-      <p id="myUsername">Me: {{username}}</p>
-    {{/with}}
-    {{#with oppUser}}
-      <p id="oppUsername">Opponent: {{username}}</p>
-    {{/with}}
-  {{/with}}
-  <p>Status: <span id="status"></span></p>
-  <p>PGN: <span id="pgn"></span></p>
+  <div id="game">
+    <div id="board" style="width: 400px"></div>
+    <div id="info">
+      {{#with game}}
+        {{#with myUser}}
+          <div id="myUsername">Me: {{username}}</div>
+        {{/with}}
+        {{#with oppUser}}
+          <div id="oppUsername">Opponent: {{username}}</div>
+        {{/with}}
+        <div>Status: {{#if winner}}{{winner}} won{{/if}}</div>
+        <div>Moves:
+          <ol>
+            {{#each moves}}
+              <li>{{color}}: {{source}}-{{target}}</li>
+            {{/each}}
+          </ol>
+        </div>
+      {{/with}}
+    </div>
+  </div>
 </template>

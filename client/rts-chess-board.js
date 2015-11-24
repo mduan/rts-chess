@@ -5,35 +5,29 @@ class RtsChessBoard {
   constructor(options) {
     this.gameId = options.gameId;
     this.moves = options.moves;
-    this.orientation = options.orientation;
+    this.color = options.color;
     this.$board = options.$board;
-    this.$status = options.$status;
-    this.$pgn = options.$pgn;
     this.initBoard();
+    this.game = new Module.RtsChess(this.board.position());
   }
 
   initBoard() {
     var self = this;
-    this.game = new Chess();
 
-    this.moves.forEach(function(move) {
-      self.game.move({
-        from: move.source,
-        to: move.target,
-        promotion: 'q' // NOTE: always promote to a queen for example simplicity
-      });
-    });
-
+    if (this.moves.length) {
+      var lastMove = this.moves[this.moves.length - 1];
+      var position = lastMove.position;
+    } else {
+      var position = 'start';
+    }
     this.board = ChessBoard(this.$board, {
       draggable: true,
-      pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
-      position: 'start',
-      showNotation: false,
       onDragStart: this.onDragStart.bind(this),
       onDrop: this.onDrop.bind(this),
-      onSnapEnd: this.onSnapEnd.bind(this),
-      orientation: this.orientation,
-      position: this.game.fen()
+      orientation: this.color === Module.RtsChess.WHITE ? 'white' : 'black',
+      pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
+      position: position,
+      showNotation: false
     });
   }
 
@@ -44,69 +38,43 @@ class RtsChessBoard {
   // do not pick up pieces if the game is over
   // only pick up pieces for the side to move
   onDragStart(source, piece, position, orientation) {
-    if (this.game.game_over() === true ||
-        (this.game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-        (this.game.turn() === 'b' && piece.search(/^w/) !== -1)) {
-      return false;
-    }
+    return piece[0] === this.color && !this.game.getWinner();
   }
 
   onDrop(source, target) {
     // see if the move is legal
-    var move = this.game.move({
-      from: source,
-      to: target
+    var valid = this.game.makeMove({
+      source: source,
+      target: target,
+      color: this.color
     });
 
     // illegal move
-    if (move === null) return 'snapback';
+    if (!valid) {
+      return 'snapback';
+    }
 
+    this.saveMove(source, target);
+  }
+
+  saveMove(source, target) {
     var numMoves = Collections.Move.find({gameId: this.gameId}).count();
     Collections.Move.insert({
       gameId: this.gameId,
       moveIdx: numMoves,
       source: source,
-      target: target
+      target: target,
+      color: this.color,
+      position: this.game.getPosition()
     });
+
+    if (this.game.getWinner()) {
+      Collections.Game.update(
+        this.gameId,
+        {$set: {winner: this.game.getWinner()}}
+      );
+    }
   }
-
-  // update the board position after the piece snap
-  // for castling, en passant, pawn promotion
-  onSnapEnd() {
-    this.board.position(this.game.fen());
-  }
-
-  //updateStatus() {
-  //  var status = '';
-
-  //  var moveColor = 'White';
-  //  if (this.game.turn() === 'b') {
-  //    moveColor = 'Black';
-  //  }
-
-  //  // checkmate?
-  //  if (this.game.in_checkmate() === true) {
-  //    status = 'Game over, ' + moveColor + ' is in checkmate.';
-  //  }
-
-  //  // draw?
-  //  else if (this.game.in_draw() === true) {
-  //    status = 'Game over, drawn position';
-  //  }
-
-  //  // game still on
-  //  else {
-  //    status = moveColor + ' to move';
-
-  //    // check?
-  //    if (this.game.in_check() === true) {
-  //      status += ', ' + moveColor + ' is in check';
-  //    }
-  //  }
-
-  //  this.$status.html(status);
-  //  this.$pgn.html(this.game.pgn());
-  //}
 }
 
 Module.RtsChessBoard = RtsChessBoard;

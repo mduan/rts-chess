@@ -1,23 +1,27 @@
 var Game = Collections.Game;
 var Move = Collections.Move;
+var required = Module.Helper.required;
 
 Meteor.methods({
-  'removeGames': function() {
+  removeGames: function() {
     Game.remove({});
   },
 
-  'removeMoves': function() {
+  removeMoves: function() {
     Move.remove({});
   },
 
-  'createGame': function(userId) {
+  createGame: function(options) {
+    var userId = required(options.userId);
     return Game.insert({
       createdById: userId,
       whiteUserId: userId
     });
   },
 
-  'joinGame': function(gameId, userId) {
+  joinGame: function(options) {
+    var gameId = required(options.gameId);
+    var userId = required(options.userId);
     // TODO(mduan): Validate game exists
     var game = Game.findOne(gameId);
     if (userId === game.whiteUserId || userId === game.blackUserId) {
@@ -35,7 +39,9 @@ Meteor.methods({
     }
   },
 
-  'startGame': function(gameId, userId) {
+  startGame: function(options) {
+    var gameId = required(options.gameId);
+    var userId = required(options.userId);
     var game = Game.findOne(gameId);
     if (userId === game.whiteUserId) {
       Game.update(game._id, {$set: {whiteUserReady: true}});
@@ -44,5 +50,9 @@ Meteor.methods({
     }
     game = Game.findOne(gameId);
     return game.whiteUserReady && game.blackUserReady;
+  },
+
+  makeMove: function(options) {
+    var gameId = required(options.gameId);
   }
 });

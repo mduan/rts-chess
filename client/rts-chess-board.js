@@ -1,14 +1,16 @@
+var required = Module.Helper.required;
+
 class RtsChessBoard {
   // Valid move logic from http://chessboardjs.com/examples#5000
   // TODO (mduan): Investigate es7 property initializers
 
   constructor(options) {
-    this.gameId = options.gameId;
-    this.moves = options.moves;
-    this.color = options.color;
-    this.$board = options.$board;
+    this.gameId = required(options.gameId);
+    this.moves = required(options.moves);
+    this.color = required(options.color);
+    this.$board = required(options.$board);
     this.initBoard();
-    this.game = new Module.RtsChess(this.board.position());
+    this.game = new Module.RtsChess({position: this.board.position()});
   }
 
   initBoard() {
@@ -52,27 +54,6 @@ class RtsChessBoard {
     // illegal move
     if (!valid) {
       return 'snapback';
-    }
-
-    this.saveMove(source, target);
-  }
-
-  saveMove(source, target) {
-    var numMoves = Collections.Move.find({gameId: this.gameId}).count();
-    Collections.Move.insert({
-      gameId: this.gameId,
-      moveIdx: numMoves,
-      source: source,
-      target: target,
-      color: this.color,
-      position: this.game.getPosition()
-    });
-
-    if (this.game.getWinner()) {
-      Collections.Game.update(
-        this.gameId,
-        {$set: {winner: this.game.getWinner()}}
-      );
     }
   }
 }

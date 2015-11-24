@@ -2,13 +2,15 @@ Router.route('/game/:gameId', function() {
   var gameId = this.params.gameId;
   var userId = Session.get('userId');
   var self = this;
-  Meteor.call('joinGame', gameId, userId, function(error, hasJoined) {
-    self.render('game', {
-      data: function() {
-        return {gameId: gameId};
-      }
-    });
-  });
+  Meteor.call('joinGame', {gameId: gameId, userId: userId},
+    function(error, hasJoined) {
+      self.render('game', {
+        data: function() {
+          return {gameId: gameId};
+        }
+      });
+    }
+  );
 });
 
 Template.game.helpers({

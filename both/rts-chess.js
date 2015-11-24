@@ -1,3 +1,5 @@
+var required = Module.Helper.required;
+
 var BLACK = 'b';
 var WHITE = 'w';
 var KING = 'K';
@@ -8,8 +10,8 @@ var ROOK = 'R';
 var PAWN = 'P';
 
 class RtsChess {
-  constructor(position) {
-    this.position = position;
+  constructor(options) {
+    this.position = required(options.position);
     this.computeWinner();
   }
 
@@ -189,6 +191,25 @@ class RtsChess {
     this.computeWinner();
 
     return true;
+  }
+
+  saveMove(source, target) {
+    var numMoves = Collections.Move.find({gameId: this.gameId}).count();
+    Collections.Move.insert({
+      gameId: this.gameId,
+      moveIdx: numMoves,
+      source: source,
+      target: target,
+      color: this.color,
+      position: this.position
+    });
+
+    if (this.getWinner()) {
+      Collections.Game.update(
+        this.gameId,
+        {$set: {winner: this.getWinner()}}
+      );
+    }
   }
 
   getWinner() {

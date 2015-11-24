@@ -1,17 +1,14 @@
-Router.route('/', function() {
+Router.route('/game/:gameId', function() {
+  var gameId = this.params.gameId;
+  var userId = Session.get('userId');
   var self = this;
-  var userId = Meteor.userId();
-  if (userId) {
-    Meteor.call('getGameId', function(error, gameId) {
-      self.render('game', {
-        data: function() {
-          return {gameId: gameId};
-        }
-      });
+  Meteor.call('joinGame', gameId, userId, function(error, hasJoined) {
+    self.render('game', {
+      data: function() {
+        return {gameId: gameId};
+      }
     });
-  } else {
-    Router.go('/login');
-  }
+  });
 });
 
 Template.game.helpers({
@@ -19,19 +16,17 @@ Template.game.helpers({
     var RtsChess = Module.RtsChess;
 
     var game = Collections.Game.findOne(this.gameId);
-    var myUser = Meteor.user();
+    var myUser = {_id: Session.get('userId')};
 
     if (game.whiteUserId === myUser._id) {
       myUser = _.extend(myUser, {color: RtsChess.WHITE});
       if (game.blackUserId) {
-        var oppUser = Meteor.users.findOne(game.blackUserId);
-        oppUser = _.extend(oppUser, {color: RtsChess.BLACK});
+        var oppUser = {_id: game.blackUserId, color: RtsChess.BLACK};
       }
     } else {
       myUser = _.extend(myUser, {color: RtsChess.BLACK});
       if (game.whiteUserId) {
-        var oppUser = Meteor.users.findOne(game.whiteUserId);
-        oppUser = _.extend(oppUser, {color: RtsChess.WHITE});
+        var oppUser = {_id: game.whiteUserId, color: RtsChess.WHITE};
       }
     }
 

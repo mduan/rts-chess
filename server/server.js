@@ -6,37 +6,43 @@ Meteor.methods({
     Game.remove({});
   },
 
-  'getGameId': function() {
-    var userId = Meteor.userId();
-    var myGame = Game.findOne({
-      $or: [
-        {whiteUserId: userId},
-        {blackUserId: userId}
-      ]
-    });
-    if (myGame) {
-      return myGame._id;
-    }
+  'removeMoves': function() {
+    Move.remove({});
+  },
 
-    var existingGame = Game.findOne({
-      $or: [
-        {whiteUserId: null},
-        {blackUserId: null}
-      ]
-    });
-    if (existingGame) {
-      var updateData = {startTime: new Date()};
-      if (!existingGame.whiteUserId) {
-        updateData.whiteUserId = userId;
-      } else {
-        updateData.blackUserId = userId;
-      }
-      Game.update(existingGame._id, {$set: updateData});
-      return existingGame._id;
-    }
-
+  'createGame': function(userId) {
     return Game.insert({
+      createdById: userId,
       whiteUserId: userId
     });
+  },
+
+  'joinGame': function(gameId, userId) {
+    // TODO(mduan): Validate game exists
+    var game = Game.findOne(gameId);
+    if (userId === game.whiteUserId || userId === game.blackUserId) {
+      return true;
+    } else if (!game.whiteUserId || !game.blackUserId) {
+      if (!game.whiteUserId) {
+        var updateData = {whiteUserId: userId};
+      } else {
+        var updateData = {blackUserId: userId};
+      }
+      Game.update(game._id, {$set: updateData});
+      return true;
+    } else {
+      return false;
+    }
+  },
+
+  'startGame': function(gameId, userId) {
+    var game = Game.findOne(gameId);
+    if (userId === game.whiteUserId) {
+      Game.update(game._id, {$set: {whiteUserReady: true}});
+    } else {
+      Game.update(game._id, {$set: {blackUserReady: true}});
+    }
+    game = Game.findOne(gameId);
+    return game.whiteUserReady && game.blackUserReady;
   }
 });

@@ -25,7 +25,7 @@ class RtsChessBoard {
       onDragStart: this.onDragStart.bind(this),
       onDrop: this.onDrop.bind(this),
       orientation: this.color === Module.RtsChess.WHITE ? 'white' : 'black',
-      pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
+      pieceTheme: '/img/chesspieces/wikipedia/{piece}.png',
       position: position,
       showNotation: false
     });

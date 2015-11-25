@@ -68,8 +68,14 @@ Meteor.methods({
       {gameId: gameId},
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch();
-    var position = lastMove ? lastMove.position : RtsChess.START_POSITION;
-    var chess = new RtsChess({position: position});
+    if (lastMove) {
+      var chess = new RtsChess({position: lastMove.position});
+    } else {
+      var chess = new RtsChess();
+    }
+
+    console.log('gameId', gameId);
+    console.log('lastMove', lastMove);
 
     var isValid = chess.makeMove({
       source: source,
@@ -77,19 +83,22 @@ Meteor.methods({
       color: color
     });
 
+    console.log('isValid', isValid);
+
     if (isValid) {
-      var numMoves = Collections.Move.find({gameId: gameId}).count();
-      Collections.Move.insert({
+      var numMoves = Move.find({gameId: gameId}).count();
+      var record = {
         gameId: gameId,
         moveIdx: numMoves,
         source: source,
         target: target,
         color: color,
         position: chess.getPosition()
-      });
+      };
+      Move.insert(record);
 
       if (chess.getWinner()) {
-        Collections.Game.update(gameId, {$set: {winner: chess.getWinner()}});
+        Game.update(gameId, {$set: {winner: chess.getWinner()}});
       }
 
       return true;

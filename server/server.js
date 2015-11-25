@@ -68,22 +68,17 @@ Meteor.methods({
       {gameId: gameId},
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch();
-    if (lastMove) {
-      var chess = new RtsChess({position: lastMove.position});
+    if (lastMove.length) {
+      var chess = new RtsChess({position: lastMove[0].position});
     } else {
       var chess = new RtsChess();
     }
-
-    console.log('gameId', gameId);
-    console.log('lastMove', lastMove);
 
     var isValid = chess.makeMove({
       source: source,
       target: target,
       color: color
     });
-
-    console.log('isValid', isValid);
 
     if (isValid) {
       var numMoves = Move.find({gameId: gameId}).count();

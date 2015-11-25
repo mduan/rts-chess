@@ -22,7 +22,7 @@ class RtsChess {
     if (options.position) {
       this.position = _.extend({}, options.position);
     } else {
-      this.position = START_POSITION;
+      this.position = _.extend({}, START_POSITION);
     }
     this.computeWinner();
   }

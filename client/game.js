@@ -20,6 +20,14 @@ Router.route('/game/:gameId', function() {
   );
 });
 
+Template.registerHelper('toFloat', function(str) {
+  return parseFloat(str);
+});
+
+Template.registerHelper('equal', function(val1, val2) {
+  return val1 === val2;
+});
+
 function getMyUser(game) {
   var myUser = User.findOne(Session.get('userId'));
   if (myUser._id === game.whiteUserId) {
@@ -41,14 +49,6 @@ function getOppUser(game) {
   return null;
 }
 
-Template.registerHelper('toFloat', function(str) {
-  return parseFloat(str);
-});
-
-Template.registerHelper('equal', function(val1, val2) {
-  return val1 === val2;
-});
-
 Template.game.helpers({
   game: function() {
     var game = Collections.Game.findOne(this.gameId);
@@ -66,6 +66,14 @@ Template.game.helpers({
 
   cooldownVals: function() {
     return ['0.0', '0.5', '1.0', '2.0'];
+  },
+
+  disabled: function() {
+    if (Session.get('userId') !== this.createdById) {
+      return 'disabled';
+    } else {
+      return null;
+    }
   },
 
   status: function() {

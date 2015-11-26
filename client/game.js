@@ -31,9 +31,15 @@ Template.registerHelper('equal', function(val1, val2) {
 function getMyUser(game) {
   var myUser = User.findOne(Session.get('userId'));
   if (myUser._id === game.whiteUserId) {
-    return _.extend(myUser, {color: RtsChess.WHITE});
+    return _.extend(myUser, {
+      color: RtsChess.WHITE,
+      isReady: game.whiteUserReady
+    });
   } else {
-    return _.extend(myUser, {color: RtsChess.BLACK});
+    return _.extend(myUser, {
+      color: RtsChess.BLACK,
+      isReady: game.blackUserReady
+    });
   }
 }
 
@@ -41,10 +47,16 @@ function getOppUser(game) {
   var myUser = User.findOne(Session.get('userId'));
   if (myUser._id === game.whiteUserId && game.blackUserId) {
     var oppUser = User.findOne(game.blackUserId);
-    return _.extend(oppUser, {color: RtsChess.BLACK});
+    return _.extend(oppUser, {
+      color: RtsChess.BLACK,
+      isReady: game.blackUserReady
+    });
   } else if (myUser._id === game.blackUserId && game.whiteUserId) {
     var oppUser = User.findOne(game.whiteUserId);
-    return _.extend(oppUser, {color: RtsChess.WHITE});
+    return _.extend(oppUser, {
+      color: RtsChess.WHITE,
+      isReady: game.whiteUserReady
+    });
   }
   return null;
 }
@@ -94,9 +106,13 @@ Template.game.helpers({
 
   status: function() {
     if (!getOppUser(this)) {
-      return 'Waiting for opponent';
-    } else {
+      return 'Waiting for opponent to join';
+    } else if (!getMyUser(this).isReady) {
       return 'Click "Start" to begin';
+    } else if (!this.startTime) {
+      return 'Waiting for opponent to click "Start"';
+    } else {
+      return null;
     }
   },
 
@@ -146,7 +162,7 @@ Template.game.onRendered(function() {
         }
       });
 
-      self.$('.colorBtns .button').click(function(e) {
+      self.$('.colorBtns .button').click(function() {
         Meteor.call('swapPlayerColor', {
           gameId: game._id,
           userId: userId,
@@ -171,6 +187,13 @@ Template.game.onRendered(function() {
       });
 
       self.$('[title]').popup();
+
+      self.$('.startBtn .button').click(function() {
+        Meteor.call('startGame', {
+          gameId: game._id,
+          userId: userId
+        });
+      });
 
       if (self.rtsChessBoard) {
         self.rtsChessBoard.destroy();

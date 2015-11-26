@@ -122,15 +122,16 @@ Meteor.methods({
 
   startGame: function(options) {
     var gameId = required(options.gameId);
-    var userId = required(options.color);
+    var userId = required(options.userId);
     var game = Game.findOne(gameId);
     var updateData = {};
 
-    if (color === RtsChess.WHITE) {
+    if (userId === game.whiteUserId) {
       updateData.whiteUserReady = true;
-    } else {
+    } else if (userId === game.blackUserId) {
       updateData.blackUserReady = true;
     }
+
     if ((game.whiteUserReady || updateData.whiteUserReady) &&
         (game.blackUserReady || updateData.blackUserReady)) {
       updateData.startTime = new Date();

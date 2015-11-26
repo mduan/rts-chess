@@ -5,9 +5,11 @@
     {{#with game}}
       <div class="boardContainer">
         <div class="board" style="width: 400px"></div>
-        <div class="statusContainer">
-          <div class="status">{{status}}</div>
-        </div>
+        {{#unless startTime}}
+          <div class="statusContainer">
+            <div class="status">{{status}}</div>
+          </div>
+        {{/unless}}
       </div>
       <div class="info">
         <div class="myUsername row">
@@ -74,7 +76,7 @@
           </div>
         {{/unless}}
         <div class="startBtn row">
-          <div class="ui disabled primary button">Start</div>
+          <div class="ui {{#unless oppUser}}disabled{{/unless}} primary button">Start</div>
         </div>
       </div>
     {{/with}}

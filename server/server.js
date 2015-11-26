@@ -19,10 +19,11 @@ Meteor.methods({
 
   createGame: function(options) {
     var userId = required(options.userId);
-    return Game.insert({
+    var gameId = Game.insert({
       createdById: userId,
       whiteUserId: userId
     });
+    return {gameId: gameId};
   },
 
   joinGame: function(options) {
@@ -31,7 +32,7 @@ Meteor.methods({
     // TODO(mduan): Validate game exists
     var game = Game.findOne(gameId);
     if (userId === game.whiteUserId || userId === game.blackUserId) {
-      return true;
+      return {success: true};
     } else if (!game.whiteUserId || !game.blackUserId) {
       if (!game.whiteUserId) {
         var updateData = {whiteUserId: userId};
@@ -39,9 +40,9 @@ Meteor.methods({
         var updateData = {blackUserId: userId};
       }
       Game.update(game._id, {$set: updateData});
-      return true;
+      return {success: true};
     } else {
-      return false;
+      return {success: false};
     }
   },
 
@@ -49,13 +50,19 @@ Meteor.methods({
     var gameId = required(options.gameId);
     var userId = required(options.color);
     var game = Game.findOne(gameId);
+    var updateData = {};
     if (color === RtsChess.WHITE) {
-      Game.update(game._id, {$set: {whiteUserReady: true}});
+      updateData.whiteUserReady = true;
     } else {
-      Game.update(game._id, {$set: {blackUserReady: true}});
+      updateData.blackUserReady = true;
     }
-    game = Game.findOne(gameId);
-    return game.whiteUserReady && game.blackUserReady;
+    if ((game.whiteUserReady || updateData.whiteUserReady) &&
+        (game.blackUserReady || updateData.blackUserReady)) {
+      updateData.startTime = new Date();
+    }
+    Game.update(game._id, {$set: updateData});
+
+    return {success: !!updateData.startGame};
   },
 
   makeMove: function(options) {
@@ -96,9 +103,9 @@ Meteor.methods({
         Game.update(gameId, {$set: {winner: chess.getWinner()}});
       }
 
-      return true;
+      return {success: true};
     } else {
-      return false;
+      return {success: true};
     }
   }
 });

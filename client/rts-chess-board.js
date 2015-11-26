@@ -8,6 +8,7 @@ class RtsChessBoard {
     this.gameId = required(options.gameId);
     this.moves = required(options.moves);
     this.color = required(options.color);
+    this.started = required(options.started);
     this.$board = required(options.$board);
 
     if (this.moves.length) {
@@ -35,7 +36,7 @@ class RtsChessBoard {
   // do not pick up pieces if the game is over
   // only pick up pieces for the side to move
   onDragStart(source, piece, position, orientation) {
-    return piece[0] === this.color && !this.game.getWinner();
+    return this.started && piece[0] === this.color && !this.game.getWinner();
   }
 
   onDrop(source, target) {

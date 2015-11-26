@@ -1,20 +1,59 @@
 @import 'lib/semantic-ui/site/globals/site.variables.import.less';
+@import 'lib/semantic-ui/themes/default/globals/site.variables.import.less';
 
 #game {
   display: flex;
+
+  .boardContainer {
+    position: relative;
+    display: block;
+
+    .statusContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: flex;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(255,255,255,0.5);
+
+      .status {
+        background-color: rgba(255,255,255,0.9);
+        padding: 10px;
+        border-radius: @defaultBorderRadius;
+        box-shadow: 0 0 3px 0 rgba(0,0,0,0.6);
+      }
+    }
+  }
 
   .info {
     margin-left: 20px;
   }
 
-  .field {
+  .row {
+    margin-bottom: 1em;
     display: flex;
+
+    &.startBtn {
+      margin-top: 30px;
+      justify-content: center;
+    }
+
+    .label {
+      display: flex;
+      width: 80px;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    .input.field {
+      flex: 1;
+    }
   }
 
-  .label {
-    width: 100px;
-  }
-
-  .value {
+  .shareUrlText {
+    margin-bottom: 5px;
   }
 }

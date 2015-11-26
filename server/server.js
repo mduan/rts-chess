@@ -1,3 +1,4 @@
+var User = Collections.User;
 var Game = Collections.Game;
 var Move = Collections.Move;
 var RtsChess = Module.RtsChess;
@@ -15,6 +16,24 @@ Meteor.methods({
 
   resetMoves: function() {
     Move.remove({});
+  },
+
+  createUser: function(options) {
+    var userId = Collections.User.insert({});
+    Meteor.call('saveUsername', {
+      userId: userId,
+      username: 'user' + userId
+    });
+    return {userId: userId};
+  },
+
+  saveUsername: function(options) {
+    var userId = required(options.userId);
+    var username = required(options.username);
+    var user = User.findOne(userId);
+    if (username && username !== user.username) {
+      User.update(userId, {$set: {username: username}});
+    }
   },
 
   createGame: function(options) {

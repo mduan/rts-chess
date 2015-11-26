@@ -1,8 +1,13 @@
 var RtsChess = Module.RtsChess;
+var User = Collections.User;
 
 Router.route('/game/:gameId', function() {
-  var gameId = this.params.gameId;
   var userId = Session.get('userId');
+  if (!userId) {
+    Router.go('/');
+  }
+
+  var gameId = this.params.gameId;
   var self = this;
   Meteor.call('joinGame', {gameId: gameId, userId: userId},
     function(error, result) {
@@ -16,8 +21,8 @@ Router.route('/game/:gameId', function() {
 });
 
 function getMyUser(game) {
-  var myUser = {_id: Session.get('userId')};
-  if (game.whiteUserId === myUser._id) {
+  var myUser = User.findOne(Session.get('userId'));
+  if (myUser._id === game.whiteUserId) {
     return _.extend(myUser, {color: RtsChess.WHITE});
   } else {
     return _.extend(myUser, {color: RtsChess.BLACK});
@@ -25,11 +30,13 @@ function getMyUser(game) {
 }
 
 function getOppUser(game) {
-  var myUserId = Session.get('userId');
-  if (myUserId === game.whiteUserId && game.blackUserId) {
-    return {_id: game.blackUserId, color: RtsChess.BLACK};
-  } else if (myUserId === game.blackUserId && game.whiteUserId) {
-    return {_id: game.whiteUserId, color: RtsChess.WHITE};
+  var myUser = User.findOne(Session.get('userId'));
+  if (myUser._id === game.whiteUserId && game.blackUserId) {
+    var oppUser = User.findOne(game.blackUserId);
+    return _.extend(oppUser, {color: RtsChess.BLACK});
+  } else if (myUser._id === game.blackUserId && game.whiteUserId) {
+    var oppUser = User.findOne(game.whiteUserId);
+    return _.extend(oppUser, {color: RtsChess.WHITE});
   }
   return null;
 }
@@ -77,10 +84,30 @@ Template.game.onRendered(function() {
   this.autorun(function() {
     self.$('.ui.dropdown').dropdown();
     self.$('[title]').popup();
+    self.$('input')
+      .keypress(function(e) {
+        if (e.which == 13 /* enter */) {
+          $(this).blur();
+        }
+      }).blur(function(e) {
+      });
 
     if (self.rtsChessBoard) {
       self.rtsChessBoard.destroy();
     }
+
+    self.$('.myUsername input').blur(function() {
+      var $el = $(this);
+      var newUsername = $el.val();
+      if (newUsername) {
+        Meteor.call('saveUsername', {
+          userId: Session.get('userId'),
+          username: newUsername
+        });
+      } else {
+        $el.val(User.findOne(Session.get('userId')).username);
+      }
+    });
 
     var game = self.game.get();
     var moves = self.moves.get();
@@ -90,6 +117,17 @@ Template.game.onRendered(function() {
       color: getMyUser(game).color,
       started: !!game.startTime,
       $board: self.$('.board')
+    });
+  });
+});
+
+Template.userField.onRendered(function() {
+  var self = this;
+  this.autorun(function() {
+    self.$('input').keypress(function(e) {
+      if (e.which == 13 /* enter */) {
+        $(this).blur();
+      }
     });
   });
 });

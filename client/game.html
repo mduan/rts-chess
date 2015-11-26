@@ -13,13 +13,19 @@
         <div class="myUsername row">
           <div class="label">Name</div>
           <div class="ui input field">
-            <input type="text" value="{{myUser._id}}">
+            {{#with myUser}}
+              {{>userField}}
+            {{/with}}
           </div>
         </div>
         <div class="oppUsername row">
           <div class="label">Opponent</div>
           <div class="ui input disabled field">
-            <input type="text" value="{{#with oppUser}}{{_id}}{{else}}Waiting{{/with}}">
+            {{#with oppUser}}
+              {{>userField}}
+            {{else}}
+              <input type="text" value="Waiting">
+            {{/with}}
           </div>
         </div>
         <div class="cooldownDropdown row">
@@ -71,5 +77,11 @@
         -->
       </div>
     {{/with}}
+  </div>
+</template>
+
+<template name="userField">
+  <div class="ui input field">
+    <input type="text" value="{{username}}">
   </div>
 </template>

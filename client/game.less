@@ -30,11 +30,18 @@
 
   .info {
     margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .row {
     margin-bottom: 1em;
     display: flex;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
 
     &.startBtn {
       margin-top: 30px;

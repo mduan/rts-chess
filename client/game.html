@@ -24,7 +24,7 @@
             {{#with oppUser}}
               {{>userField}}
             {{else}}
-              <input type="text" value="Waiting">
+              <input type="text" value="Waiting for opponent">
             {{/with}}
           </div>
         </div>
@@ -51,6 +51,7 @@
             <div class="ui {{disabled}} button">Black</div>
           </div>
         </div>
+        <!--
         <div class="versusBtns row">
           <div class="label">Versus</div>
           <div class="ui basic buttons field">
@@ -58,6 +59,7 @@
             <div class="ui {{disabled}} button">Computer</div>
           </div>
         </div>
+        -->
         {{#unless disabled}}
           <div class="shareUrl">
             <div class="shareUrlText">Share the url to play with a friend</div>
@@ -74,16 +76,6 @@
         <div class="startBtn row">
           <div class="ui disabled primary button">Start</div>
         </div>
-        <!--
-        <div>Status: {{#if winner}}{{winner}} won{{/if}}</div>
-        <div>Moves:
-          <ol>
-            {{#each moves}}
-              <li>{{color}}: {{source}}-{{target}}</li>
-            {{/each}}
-          </ol>
-        </div>
-        -->
       </div>
     {{/with}}
   </div>

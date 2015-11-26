@@ -41,6 +41,14 @@ function getOppUser(game) {
   return null;
 }
 
+Template.registerHelper('toFloat', function(str) {
+  return parseFloat(str);
+});
+
+Template.registerHelper('equal', function(val1, val2) {
+  return val1 === val2;
+});
+
 Template.game.helpers({
   game: function() {
     var game = Collections.Game.findOne(this.gameId);
@@ -54,6 +62,10 @@ Template.game.helpers({
 
   oppUser: function() {
     return getOppUser(this);
+  },
+
+  cooldownVals: function() {
+    return ['0.0', '0.5', '1.0', '2.0'];
   },
 
   status: function() {
@@ -82,41 +94,45 @@ Template.game.onCreated(function() {
 Template.game.onRendered(function() {
   var self = this;
   this.autorun(function() {
-    self.$('.ui.dropdown').dropdown();
-    self.$('[title]').popup();
-    self.$('input')
-      .keypress(function(e) {
-        if (e.which == 13 /* enter */) {
-          $(this).blur();
-        }
-      }).blur(function(e) {
-      });
-
-    if (self.rtsChessBoard) {
-      self.rtsChessBoard.destroy();
-    }
-
-    self.$('.myUsername input').blur(function() {
-      var $el = $(this);
-      var newUsername = $el.val();
-      if (newUsername) {
-        Meteor.call('saveUsername', {
-          userId: Session.get('userId'),
-          username: newUsername
-        });
-      } else {
-        $el.val(User.findOne(Session.get('userId')).username);
-      }
-    });
-
     var game = self.game.get();
     var moves = self.moves.get();
-    self.rtsChessBoard = new Module.RtsChessBoard({
-      gameId: game._id,
-      moves: moves,
-      color: getMyUser(game).color,
-      started: !!game.startTime,
-      $board: self.$('.board')
+
+    Tracker.afterFlush(function() {
+      self.$('.myUsername input').blur(function() {
+        var $el = $(this);
+        var newUsername = $el.val();
+        if (newUsername) {
+          Meteor.call('updateUser', {
+            userId: Session.get('userId'),
+            username: newUsername
+          });
+        } else {
+          $el.val(User.findOne(Session.get('userId')).username);
+        }
+      });
+
+      self.$('.ui.dropdown').dropdown({
+        onChange: function(value, text, $selectedItem) {
+          var cooldown = parseFloat(value);
+          Meteor.call('updateGame', {
+            gameId: game._id,
+            cooldown: cooldown
+          });
+        }
+      });
+
+      self.$('[title]').popup();
+
+      if (self.rtsChessBoard) {
+        self.rtsChessBoard.destroy();
+      }
+      self.rtsChessBoard = new Module.RtsChessBoard({
+        gameId: game._id,
+        moves: moves,
+        color: getMyUser(game).color,
+        started: !!game.startTime,
+        $board: self.$('.board')
+      });
     });
   });
 });

@@ -31,10 +31,17 @@
         <div class="cooldownDropdown row">
           <div class="label">Cooldown</div>
           <select class="ui dropdown field">
-            <option value="0.0">No cooldown</option>
-            <option value="0.5">0.5 seconds</option>
-            <option value="1.0">1.0 seconds</option>
-            <option value="2.0">2.0 seconds</option>
+            {{#each cooldownStr in cooldownVals}}
+              {{#let cooldownFloat=(toFloat cooldownStr)}}
+                <option value="{{cooldownStr}}" selected={{#if (equal cooldown cooldownFloat)}}selected{{/if}}>
+                  {{#if cooldownFloat}}
+                    {{cooldownStr}} seconds
+                  {{else}}
+                    No cooldown
+                  {{/if}}
+                </option>
+              {{/let}}
+            {{/each}}
           </select>
         </div>
         <div class="colorBtns row">

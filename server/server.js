@@ -20,19 +20,25 @@ Meteor.methods({
 
   createUser: function(options) {
     var userId = Collections.User.insert({});
-    Meteor.call('saveUsername', {
+    Meteor.call('updateUser', {
       userId: userId,
       username: 'user' + userId
     });
     return {userId: userId};
   },
 
-  saveUsername: function(options) {
+  updateUser: function(options) {
     var userId = required(options.userId);
-    var username = required(options.username);
     var user = User.findOne(userId);
+    var updateData = {};
+
+    var username = options.username;
     if (username && username !== user.username) {
-      User.update(userId, {$set: {username: username}});
+      updateData.username = username;
+    }
+
+    if (!_.isEmpty(updateData)) {
+      User.update(userId, {$set: updateData});
     }
   },
 
@@ -40,9 +46,25 @@ Meteor.methods({
     var userId = required(options.userId);
     var gameId = Game.insert({
       createdById: userId,
-      whiteUserId: userId
+      whiteUserId: userId,
+      cooldown: 0.0
     });
     return {gameId: gameId};
+  },
+
+  updateGame: function(options) {
+    var gameId = required(options.gameId);
+    var game = Game.findOne(gameId);
+    var updateData = {};
+
+    var cooldown = options.cooldown;
+    if (_.isFinite(cooldown) && cooldown !== game.cooldown) {
+      updateData.cooldown = cooldown;
+    }
+
+    if (!_.isEmpty(updateData)) {
+      Game.update(gameId, {$set: updateData});
+    }
   },
 
   joinGame: function(options) {

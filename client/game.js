@@ -64,6 +64,18 @@ Template.game.helpers({
     return getOppUser(this);
   },
 
+  isBlack: function() {
+    return getMyUser(this).color === RtsChess.BLACK;
+  },
+
+  whiteColor: function() {
+    return RtsChess.WHITE;
+  },
+
+  blackColor: function() {
+    return RtsChess.BLACK;
+  },
+
   cooldownVals: function() {
     return ['0.0', '0.5', '1.0', '2.0'];
   },
@@ -108,6 +120,7 @@ Template.game.onRendered(function() {
   this.autorun(function() {
     var game = self.game.get();
     var moves = self.moves.get();
+    var userId = Session.get('userId');
 
     Tracker.afterFlush(function() {
       self.$('.myUsername input').blur(function() {
@@ -115,28 +128,12 @@ Template.game.onRendered(function() {
         var newUsername = $el.val();
         if (newUsername) {
           Meteor.call('updateUser', {
-            userId: Session.get('userId'),
+            userId: userId,
             username: newUsername
           });
         } else {
-          $el.val(User.findOne(Session.get('userId')).username);
+          $el.val(User.findOne(userId).username);
         }
-      });
-
-      // Select url on focus: http://stackoverflow.com/questions/3150275/jquery-input-select-all-on-focus#answer-22102081
-      $('.shareUrlInput input').focus(function() {
-        var $el = $(this).one('mouseup.mouseupSelect', function() {
-          $el.select();
-          return false;
-        }).one('mousedown', function() {
-          // compensate for untriggered 'mouseup' caused by focus via tab
-          $el.off('mouseup.mouseupSelect');
-        }).select();
-      });
-
-      $('.shareUrlInput .copyUrlBtn').click(function() {
-        var $input = $(this).closest('.shareUrlInput').find('input');
-        Module.Helper.copyToClipboard($input.val());
       });
 
       self.$('.ui.dropdown').dropdown({
@@ -147,6 +144,30 @@ Template.game.onRendered(function() {
             cooldown: cooldown
           });
         }
+      });
+
+      self.$('.colorBtns .button').click(function(e) {
+        Meteor.call('swapPlayerColor', {
+          gameId: game._id,
+          userId: userId,
+          color: $(this).attr('data-color')
+        });
+      });
+
+      // Select url on focus: http://stackoverflow.com/questions/3150275/jquery-input-select-all-on-focus#answer-22102081
+      self.$('.shareUrlInput input').focus(function() {
+        var $el = $(this).one('mouseup.mouseupSelect', function() {
+          $el.select();
+          return false;
+        }).one('mousedown', function() {
+          // compensate for untriggered 'mouseup' caused by focus via tab
+          $el.off('mouseup.mouseupSelect');
+        }).select();
+      });
+
+      self.$('.shareUrlInput .copyUrlBtn').click(function() {
+        var $input = $(this).closest('.shareUrlInput').find('input');
+        Module.Helper.copyToClipboard($input.val());
       });
 
       self.$('[title]').popup();

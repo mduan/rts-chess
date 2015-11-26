@@ -67,20 +67,53 @@ Meteor.methods({
     }
   },
 
+  swapPlayerColor: function(options) {
+    var gameId = required(options.gameId);
+    var userId = required(options.userId);
+    var color = required(options.color);
+    var game = Game.findOne(gameId);
+    var updateData = {};
+
+    if (color === RtsChess.WHITE && userId !== game.whiteUserId ||
+        color === RtsChess.BLACK && userId !== game.blackUserId) {
+      if (color === RtsChess.WHITE) {
+        updateData.whiteUserId = userId;
+        if (game.whiteUserId) {
+          updateData.blackUserId = game.whiteUserId;
+        }
+      } else {
+        updateData.blackUserId = userId;
+        if (game.blackUserId) {
+          updateData.whiteUserId = game.blackUserId;
+        }
+      }
+    }
+
+    if (!_.isEmpty(updateData)) {
+      Game.update(gameId, {$set: updateData});
+    }
+  },
+
   joinGame: function(options) {
     var gameId = required(options.gameId);
     var userId = required(options.userId);
-    // TODO(mduan): Validate game exists
     var game = Game.findOne(gameId);
+    var updateData = {};
+
     if (userId === game.whiteUserId || userId === game.blackUserId) {
       return {success: true};
-    } else if (!game.whiteUserId || !game.blackUserId) {
+    }
+
+    if (!game.whiteUserId || !game.blackUserId) {
       if (!game.whiteUserId) {
-        var updateData = {whiteUserId: userId};
+        updateData.whiteUserId = userId;
       } else {
-        var updateData = {blackUserId: userId};
+        updateData.blackUserId = userId;
       }
-      Game.update(game._id, {$set: updateData});
+    }
+
+    if (!_.isEmpty(updateData)) {
+      Game.update(gameId, {$set: updateData});
       return {success: true};
     } else {
       return {success: false};
@@ -92,6 +125,7 @@ Meteor.methods({
     var userId = required(options.color);
     var game = Game.findOne(gameId);
     var updateData = {};
+
     if (color === RtsChess.WHITE) {
       updateData.whiteUserReady = true;
     } else {
@@ -101,9 +135,12 @@ Meteor.methods({
         (game.blackUserReady || updateData.blackUserReady)) {
       updateData.startTime = new Date();
     }
-    Game.update(game._id, {$set: updateData});
 
-    return {success: !!updateData.startGame};
+    if (!_.isEmpty(updateData)) {
+      Game.update(gameId, {$set: updateData});
+    }
+
+    return {success: !!updateData.startTime};
   },
 
   makeMove: function(options) {

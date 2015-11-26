@@ -47,8 +47,8 @@
         <div class="colorBtns row">
           <div class="label">Color</div>
           <div class="ui basic buttons field">
-            <div class="ui {{disabled}} button active">White</div>
-            <div class="ui {{disabled}} button">Black</div>
+            <div class="ui {{disabled}} button {{#unless isBlack}}active{{/unless}}" data-color="{{whiteColor}}">White</div>
+            <div class="ui {{disabled}} button {{#if isBlack}}active{{/if}}" data-color="{{blackColor}}">Black</div>
           </div>
         </div>
         <!--

@@ -3,14 +3,57 @@
 
   <div id="game">
     <div id="board" style="width: 400px"></div>
-    <div id="info">
+    <div class="info">
       {{#with game}}
-        {{#with myUser}}
-          <div id="myUsername">Me: {{username}}</div>
-        {{/with}}
-        {{#with oppUser}}
-          <div id="oppUsername">Opponent: {{username}}</div>
-        {{/with}}
+        <div class="myUsername field">
+          <div class="label">Name:</div>
+          <div class="ui input value">
+            <input type="text" value="{{myUser._id}}">
+          </div>
+        </div>
+        <div class="oppUsername field">
+          <div class="label">Opponent:</div>
+          <div class="ui input disabled value">
+            <input type="text" value="{{#with oppUser}}{{_id}}{{else}}Waiting{{/with}}">
+          </div>
+        </div>
+        <div class="cooldownDropdown field">
+          <div class="label">Cooldown</div>
+          <select class="ui dropdown value">
+            <option value="0.0">No cooldown</option>
+            <option value="0.5">0.5 seconds</option>
+            <option value="1.0">1.0 seconds</option>
+            <option value="2.0">2.0 seconds</option>
+          </select>
+        </div>
+        <div class="colorBtns field">
+          <div class="label">Color</div>
+          <div class="ui basic buttons value">
+            <div class="ui button active">White</div>
+            <div class="ui button">Black</div>
+          </div>
+        </div>
+        <div class="versusBtns field">
+          <div class="label">Versus</div>
+          <div class="ui basic buttons value">
+            <div class="ui button active">Human</div>
+            <div class="ui button">Computer</div>
+          </div>
+        </div>
+        <div class="shareUrl field">
+          <div class="shareUrlCell">
+            <div>Share the url with a friend to play with them</div>
+            <div class="ui action input">
+              <input type="text" value="http://rts-chess.mduan.com/game/NS59vGYEryTrYQnA5">
+              <button class="ui icon button">
+                <i class="copy icon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="startBtn field">
+          <div class="ui disabled primary button">Start</div>
+        </div>
         <div>Status: {{#if winner}}{{winner}} won{{/if}}</div>
         <div>Moves:
           <ol>

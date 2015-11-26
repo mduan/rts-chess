@@ -56,6 +56,8 @@ Template.game.onCreated(function() {
 Template.game.onRendered(function() {
   var self = this;
   this.autorun(function() {
+    self.$('.ui.dropdown').dropdown();
+
     if (self.rtsChessBoard) {
       self.rtsChessBoard.destroy();
     }

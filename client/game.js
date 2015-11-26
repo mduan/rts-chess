@@ -1,5 +1,7 @@
 var RtsChess = Module.RtsChess;
 var User = Collections.User;
+var Game = Collections.Game;
+var Move = Collections.Move;
 
 Router.route('/game/:gameId', function() {
   var userId = Session.get('userId');
@@ -61,11 +63,21 @@ function getOppUser(game) {
   return null;
 }
 
+function getGame(gameId) {
+  return Game.findOne(gameId);
+}
+
+function getMoves(gameId) {
+  return Move.find({gameId: gameId}, {sort: {moveIdx: 1}}).fetch();
+}
+
 Template.game.helpers({
   game: function() {
-    var game = Collections.Game.findOne(this.gameId);
-    Template.instance().game.set(game);
-    return game;
+    return getGame(this.gameId);
+  },
+
+  moves: function() {
+    return getMoves(this._id);
   },
 
   myUser: function() {
@@ -114,28 +126,15 @@ Template.game.helpers({
     } else {
       return null;
     }
-  },
-
-  moves: function() {
-    var moves = Collections.Move.find(
-      {gameId: this._id},
-      {sort: {moveIdx: 1}}
-    ).fetch();
-    Template.instance().moves.set(moves);
-    return moves;
   }
-});
-
-Template.game.onCreated(function() {
-  this.game = new ReactiveVar();
-  this.moves = new ReactiveVar([]);
 });
 
 Template.game.onRendered(function() {
   var self = this;
   this.autorun(function() {
-    var game = self.game.get();
-    var moves = self.moves.get();
+    var gameId = self.data.gameId;
+    var game = getGame(gameId);
+    var moves = getMoves(gameId);
     var userId = Session.get('userId');
 
     Tracker.afterFlush(function() {

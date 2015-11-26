@@ -22,3 +22,5 @@ fourseven:scss
 iron:router
 reactive-var
 u2622:persistent-session
+semantic:ui
+flemay:less-autoprefixer

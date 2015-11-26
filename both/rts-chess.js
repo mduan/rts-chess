@@ -145,8 +145,8 @@ class RtsChess {
       if (rowDiff === 0) {
         return false;
       }
-      if (pieceColor === WHITE && rowDiff < 0 ||
-          pieceColor === BLACK && rowDiff > 0) {
+      if (pieceColor === WHITE && rowDiff < 0
+          || pieceColor === BLACK && rowDiff > 0) {
         return false;
       }
       if (absRowDiff === 1 && absColDiff === 1 &&
@@ -157,12 +157,16 @@ class RtsChess {
       if (colDiff !== 0) {
         return false;
       }
-      if ((pieceColor === WHITE && sourceRowIdx === 1 ||
-            pieceColor === BLACK && sourceRowIdx === 6) && absRowDiff <= 2) {
-        return true;
-      }
-      if (absRowDiff === 1) {
-        return true;
+      if (!this.isOccupied(target)) {
+        // moving forwards
+        if ((pieceColor === WHITE && sourceRowIdx === 1
+              || pieceColor === BLACK && sourceRowIdx === 6)
+            && absRowDiff <= 2) {
+          return true;
+        }
+        if (absRowDiff === 1) {
+          return true;
+        }
       }
       return false;
     }

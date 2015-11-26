@@ -68,6 +68,10 @@ Template.game.helpers({
     return ['0.0', '0.5', '1.0', '2.0'];
   },
 
+  gameUrl: function() {
+    return location.href;
+  },
+
   disabled: function() {
     if (Session.get('userId') !== this.createdById) {
       return 'disabled';
@@ -117,6 +121,22 @@ Template.game.onRendered(function() {
         } else {
           $el.val(User.findOne(Session.get('userId')).username);
         }
+      });
+
+      // Select url on focus: http://stackoverflow.com/questions/3150275/jquery-input-select-all-on-focus#answer-22102081
+      $('.shareUrlInput input').focus(function() {
+        var $el = $(this).one('mouseup.mouseupSelect', function() {
+          $el.select();
+          return false;
+        }).one('mousedown', function() {
+          // compensate for untriggered 'mouseup' caused by focus via tab
+          $el.off('mouseup.mouseupSelect');
+        }).select();
+      });
+
+      $('.shareUrlInput .copyUrlBtn').click(function() {
+        var $input = $(this).closest('.shareUrlInput').find('input');
+        Module.Helper.copyToClipboard($input.val());
       });
 
       self.$('.ui.dropdown').dropdown({

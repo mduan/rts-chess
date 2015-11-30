@@ -134,6 +134,14 @@ Template.game.helpers({
     } else {
       return null;
     }
+  },
+
+  boardData: function() {
+    return {
+      gameId: this._id,
+      color: getMyUser(this).color,
+      started: !!this.startTime
+    };
   }
 });
 
@@ -142,7 +150,6 @@ Template.game.onRendered(function() {
   this.autorun(function() {
     var gameId = self.data.gameId;
     var game = getGame(gameId);
-    var moves = getMoves(gameId);
     var userId = Session.get('userId');
 
     Tracker.afterFlush(function() {
@@ -201,17 +208,6 @@ Template.game.onRendered(function() {
           gameId: game._id,
           userId: userId
         });
-      });
-
-      if (self.rtsChessBoard) {
-        self.rtsChessBoard.destroy();
-      }
-      self.rtsChessBoard = new Module.RtsChessBoard({
-        gameId: game._id,
-        moves: moves,
-        color: getMyUser(game).color,
-        started: !!game.startTime,
-        $board: self.$('.board')
       });
     });
   });

@@ -4,7 +4,9 @@
   <div id="game">
     {{#with game}}
       <div class="boardContainer">
-        <div class="board" style="width: 400px"></div>
+        <div class="boardWrapper">
+          {{>Template.dynamic template="board" data=boardData}}
+        </div>
         {{#unless startTime}}
           <div class="statusContainer">
             <div class="status">{{status}}</div>

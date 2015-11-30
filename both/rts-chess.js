@@ -22,7 +22,7 @@ var RtsChess = (function() {
     if (options.position) {
       this.position = _.extend({}, options.position);
     } else {
-      this.position = _.extend({}, START_POSITION);
+      this.position = RtsChess.getStartPosition();
     }
     this.computeWinner();
   }
@@ -33,14 +33,14 @@ var RtsChess = (function() {
       return this.position;
     },
 
-    isValidCell: function(cell) {
-      var col = cell[0];
-      var row = cell[1];
+    isValidSquare: function(square) {
+      var col = square[0];
+      var row = square[1];
       return col >= 'a' && col <= 'h' && row >= '1' && row <= '8';
     },
 
-    isOccupied: function(cell) {
-      return cell in this.position;
+    isOccupied: function(square) {
+      return square in this.position;
     },
 
     isGameOver: function() {
@@ -48,26 +48,26 @@ var RtsChess = (function() {
       return false;
     },
 
-    getPieceColor: function(cell) {
-      if (!this.isOccupied(cell)) {
+    getPieceColor: function(square) {
+      if (!this.isOccupied(square)) {
         return null;
       }
-      return this.position[cell][0];
+      return this.position[square][0];
     },
 
-    getPieceType: function(cell) {
-      if (!this.isOccupied(cell)) {
+    getPieceType: function(square) {
+      if (!this.isOccupied(square)) {
         return null;
       }
-      return this.position[cell][1];
+      return this.position[square][1];
     },
 
-    getRowIdx: function(cell) {
-      return cell.charCodeAt(1) - '1'.charCodeAt(0);
+    getRowIdx: function(square) {
+      return square.charCodeAt(1) - '1'.charCodeAt(0);
     },
 
-    getColIdx: function(cell) {
-      return cell.charCodeAt(0) - 'a'.charCodeAt(0);
+    getColIdx: function(square) {
+      return square.charCodeAt(0) - 'a'.charCodeAt(0);
     },
 
     getRowDiff: function(source, target) {
@@ -85,10 +85,6 @@ var RtsChess = (function() {
         return 1;
       }
       return 0;
-    },
-
-    toCell: function(rowIdx, colIdx) {
-      return String.fromCharCode('a'.charCodeAt(0) + colIdx) + (rowIdx + 1);
     },
 
     isValidPieceMove: function(source, target) {
@@ -129,7 +125,7 @@ var RtsChess = (function() {
         var rowIdx = sourceRowIdx + rowDir;
         var colIdx = sourceColIdx + colDir;
         while (!(rowIdx === targetRowIdx && colIdx === targetColIdx)) {
-          if (this.isOccupied(this.toCell(rowIdx, colIdx))) {
+          if (this.isOccupied(RtsChess.toSquare(rowIdx, colIdx))) {
             return false;
           }
           rowIdx += rowDir;
@@ -185,8 +181,8 @@ var RtsChess = (function() {
         return false;
       }
 
-      if (!this.isValidCell(source)
-        || !this.isValidCell(target)) {
+      if (!this.isValidSquare(source)
+        || !this.isValidSquare(target)) {
         return false;
       }
 
@@ -238,6 +234,24 @@ var RtsChess = (function() {
 
   RtsChess.BLACK = BLACK;
   RtsChess.WHITE = WHITE;
+  RtsChess.NUM_ROWS = 8;
+  RtsChess.NUM_COLS = 8;
+
+  RtsChess.getStartPosition = function() {
+    return _.extend({}, START_POSITION);
+  };
+
+  RtsChess.toSquare = function(rowIdx, colIdx) {
+    return String.fromCharCode('a'.charCodeAt(0) + colIdx) + (rowIdx + 1);
+  };
+
+  RtsChess.swapColor = function(color) {
+    if (color === WHITE) {
+      return BLACK;
+    } else {
+      return WHITE;
+    }
+  };
 
   return RtsChess;
 })();

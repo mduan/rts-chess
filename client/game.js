@@ -22,7 +22,7 @@ Router.route('/game/:gameId', function() {
   var userId = Session.get('userId');
   if (!userId) {
     createUser(function(userId) {
-      joinGame(renderFunc, gameId, userId);
+      joinGame(renderFunc, gameId, userId):
     })
   } else {
     joinGame(renderFunc, gameId, userId);

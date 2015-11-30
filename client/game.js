@@ -2,24 +2,31 @@ var RtsChess = Module.RtsChess;
 var User = Collections.User;
 var Game = Collections.Game;
 var Move = Collections.Move;
+var createUser = Module.Helper.createUser;
 
 Router.route('/game/:gameId', function() {
-  var userId = Session.get('userId');
-  if (!userId) {
-    Router.go('/');
+  function joinGame(renderFunc, gameId, userId) {
+    Meteor.call('joinGame', {gameId: gameId, userId: userId},
+      function() {
+        renderFunc('game', {
+          data: function() {
+            return {gameId: gameId};
+          }
+        });
+      }
+    );
   }
 
+  var renderFunc = this.render.bind(this);
   var gameId = this.params.gameId;
-  var self = this;
-  Meteor.call('joinGame', {gameId: gameId, userId: userId},
-    function(error, result) {
-      self.render('game', {
-        data: function() {
-          return {gameId: gameId};
-        }
-      });
-    }
-  );
+  var userId = Session.get('userId');
+  if (!userId) {
+    createUser(function(userId) {
+      joinGame(renderFunc, gameId, userId);
+    })
+  } else {
+    joinGame(renderFunc, gameId, userId);
+  }
 });
 
 Template.registerHelper('toFloat', function(str) {
@@ -47,14 +54,15 @@ function getMyUser(game) {
 
 function getOppUser(game) {
   var myUser = User.findOne(Session.get('userId'));
+  var oppUser;
   if (myUser._id === game.whiteUserId && game.blackUserId) {
-    var oppUser = User.findOne(game.blackUserId);
+    oppUser = User.findOne(game.blackUserId);
     return _.extend(oppUser, {
       color: RtsChess.BLACK,
       isReady: game.blackUserReady
     });
   } else if (myUser._id === game.blackUserId && game.whiteUserId) {
-    var oppUser = User.findOne(game.whiteUserId);
+    oppUser = User.findOne(game.whiteUserId);
     return _.extend(oppUser, {
       color: RtsChess.WHITE,
       isReady: game.whiteUserReady
@@ -152,11 +160,10 @@ Template.game.onRendered(function() {
       });
 
       self.$('.ui.dropdown').dropdown({
-        onChange: function(value, text, $selectedItem) {
-          var cooldown = parseFloat(value);
+        onChange: function(value) {
           Meteor.call('updateGame', {
             gameId: game._id,
-            cooldown: cooldown
+            cooldown: parseFloat(value)
           });
         }
       });
@@ -169,7 +176,9 @@ Template.game.onRendered(function() {
         });
       });
 
+      /* jshint -W101 */
       // Select url on focus: http://stackoverflow.com/questions/3150275/jquery-input-select-all-on-focus#answer-22102081
+      /* jshint +W101 */
       self.$('.shareUrlInput input').focus(function() {
         var $el = $(this).one('mouseup.mouseupSelect', function() {
           $el.select();
@@ -212,7 +221,7 @@ Template.userField.onRendered(function() {
   var self = this;
   this.autorun(function() {
     self.$('input').keypress(function(e) {
-      if (e.which == 13 /* enter */) {
+      if (e.which === 13 /* enter */) {
         $(this).blur();
       }
     });

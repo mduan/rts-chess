@@ -5,5 +5,13 @@ Module.Helper = _.extend(Module.Helper, {
     $input.val(text).select();
     document.execCommand('copy');
     $input.remove();
+  },
+
+  createUser: function(callback) {
+    Meteor.call('createUser', function(_, result) {
+      var userId = result.userId;
+      Session.setPersistent('userId', userId);
+      callback(userId);
+    });
   }
 });

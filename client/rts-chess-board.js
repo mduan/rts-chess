@@ -1,10 +1,10 @@
 var required = Module.Helper.required;
 
-class RtsChessBoard {
+var RtsChessBoard = (function() {
   // Valid move logic from http://chessboardjs.com/examples#5000
   // TODO (mduan): Investigate es7 property initializers
 
-  constructor(options) {
+  function RtsChessBoard(options) {
     this.gameId = required(options.gameId);
     this.moves = required(options.moves);
     this.color = required(options.color);
@@ -29,34 +29,38 @@ class RtsChessBoard {
     });
   }
 
-  destroy() {
-    this.board.destroy();
-  }
+  _.extend(RtsChessBoard.prototype, {
+    destroy: function() {
+      this.board.destroy();
+    },
 
-  // do not pick up pieces if the game is over
-  // only pick up pieces for the side to move
-  onDragStart(source, piece, position, orientation) {
-    return this.started && piece[0] === this.color && !this.game.getWinner();
-  }
+    // do not pick up pieces if the game is over
+    // only pick up pieces for the side to move
+    onDragStart: function(source, piece) {
+      return this.started && piece[0] === this.color && !this.game.getWinner();
+    },
 
-  onDrop(source, target) {
-    var isValid = this.game.makeMove({
-      source: source,
-      target: target,
-      color: this.color
-    });
+    onDrop: function(source, target) {
+      var isValid = this.game.makeMove({
+        source: source,
+        target: target,
+        color: this.color
+      });
 
-    if (!isValid) {
-      return 'snapback';
+      if (!isValid) {
+        return 'snapback';
+      }
+
+      Meteor.call('makeMove', {
+        gameId: this.gameId,
+        source: source,
+        target: target,
+        color: this.color
+      });
     }
+  });
 
-    Meteor.call('makeMove', {
-      gameId: this.gameId,
-      source: source,
-      target, target,
-      color: this.color
-    });
-  }
-}
+  return RtsChessBoard;
+})();
 
 Module.RtsChessBoard = RtsChessBoard;

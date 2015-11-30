@@ -1,8 +1,9 @@
 var required = Module.Helper.required;
+var createUser = Module.Helper.createUser;
 
 function createGame(options) {
   var userId = required(options.userId);
-  Meteor.call('createGame', {userId: userId}, function(error, result) {
+  Meteor.call('createGame', {userId: userId}, function(_, result) {
     Router.go('/game/' + result.gameId);
   });
 }
@@ -10,9 +11,7 @@ function createGame(options) {
 Router.route('/', function() {
   var userId = Session.get('userId');
   if (!userId) {
-    Meteor.call('createUser', function(error, result) {
-      var userId = result.userId;
-      Session.setPersistent('userId', userId);
+    createUser(function(userId) {
       createGame({userId: userId});
     });
   } else {

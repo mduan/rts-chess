@@ -18,7 +18,7 @@ Meteor.methods({
     Move.remove({});
   },
 
-  createUser: function(options) {
+  createUser: function() {
     var userId = Collections.User.insert({});
     Meteor.call('updateUser', {
       userId: userId,
@@ -154,10 +154,11 @@ Meteor.methods({
       {gameId: gameId},
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch();
+    var chess;
     if (lastMove.length) {
-      var chess = new RtsChess({position: lastMove[0].position});
+      chess = new RtsChess({position: lastMove[0].position});
     } else {
-      var chess = new RtsChess();
+      chess = new RtsChess();
     }
 
     var isValid = chess.makeMove({

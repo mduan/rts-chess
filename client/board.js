@@ -1,11 +1,6 @@
 var RtsChess = Module.RtsChess;
 var Move = Collections.Move;
 
-var BOARD_SQUARE_SELECTOR = '.board-square';
-var BOARD_HIGHLIGHT_CLASS = 'board-highlight';
-var BOARD_PIECE_SELECTOR = BOARD_SQUARE_SELECTOR + ' img';
-var BOARD_DRAG_PIECE_CLASS = 'board-dragPiece';
-
 function getXYSquare(squareBounds, x, y) {
   return squareBounds.find(function(bound) {
     return (x >= bound.left && x < bound.right
@@ -36,14 +31,13 @@ Template.board.onCreated(function() {
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch();
 
-    var position;
     if (lastMove.length) {
-      position = _.extend({}, lastMove[0].position);
+      self.position = _.extend({}, lastMove[0].position);
     } else {
-      position = RtsChess.getStartPosition();
+      self.position = RtsChess.getStartPosition();
     }
 
-    _.each(position, function(piece, square) {
+    _.each(self.position, function(piece, square) {
       self.squares.set(square, piece);
     });
   });
@@ -52,7 +46,7 @@ Template.board.onCreated(function() {
 Template.board.onRendered(function() {
   var self = this;
 
-  this.squareBounds = getSquareBounds(this.$(BOARD_SQUARE_SELECTOR));
+  this.squareBounds = getSquareBounds(this.$('.board-square'));
 
   $(window).mousemove(function(e) {
     var $dragPiece = self.$dragPiece;
@@ -60,8 +54,6 @@ Template.board.onRendered(function() {
       return;
     }
 
-    var $target = $(e.target);
-    console.log('mousemove', $target);
     var width = $dragPiece.width();
     var height = $dragPiece.height();
     $dragPiece.css({
@@ -69,26 +61,52 @@ Template.board.onRendered(function() {
       'left': e.pageX - width/2
     });
 
+    if (self.$dragTarget) {
+      self.$dragTarget.removeClass('board-highlight');
+    }
+
     var newSquare = getXYSquare(self.squareBounds, e.pageX, e.pageY);
-    if (self.dragSquare) {
-      self.dragSquare.$el.removeClass(BOARD_HIGHLIGHT_CLASS);
-    }
     if (newSquare) {
-      newSquare.$el.addClass(BOARD_HIGHLIGHT_CLASS);
+      self.$dragTarget = newSquare.$el;
+      self.$dragTarget.addClass('board-highlight');
+    } else {
+      self.$dragTarget = null;
     }
-    self.dragSquare = newSquare;
   });
 
   $(window).mouseup(function() {
-    if (self.dragSquare) {
-      self.dragSquare.$el.find(BOARD_PIECE_SELECTOR).remove();
-      self.dragSquare.$el.append(self.$dragSource);
+    var $sourceImg = self.$dragSource.find('img');
+    if (self.$dragTarget) {
+      self.$dragTarget.removeClass('board-highlight');
+
+      var sourceSquare = self.$dragSource.attr('data-square');
+      var targetSquare = self.$dragTarget.attr('data-square');
+      var game = new RtsChess({position: self.position});
+
+      var isValid = game.makeMove({
+        source: sourceSquare,
+        target: targetSquare,
+        color: self.data.color
+      });
+
+      if (isValid) {
+        Meteor.call('makeMove', {
+          gameId: self.data.gameId,
+          source: sourceSquare,
+          target: targetSquare,
+          color: self.data.color
+        });
+
+        self.$dragTarget.find('img').remove();
+        self.$dragTarget.append($sourceImg);
+      }
     }
-    self.$dragSource.show();
+
+    $sourceImg.show();
     self.$dragPiece.remove();
 
     self.$dragSource = null;
-    self.dragSquare = null;
+    self.$dragTarget = null;
     self.$dragPiece = null;
   });
 });
@@ -100,7 +118,7 @@ Template.board.events({
     var width = $target.width();
     var height = $target.height();
     var $img = $('<img>')
-      .addClass(BOARD_DRAG_PIECE_CLASS)
+      .addClass('board-dragPiece')
       .attr('src', $target.attr('src'))
       .width(width)
       .height(height)
@@ -117,7 +135,7 @@ Template.board.events({
     self.$dragPiece = $img;
 
     $target.hide();
-    self.$dragSource = $target;
+    self.$dragSource = $target.closest('.board-square');
   }
 });
 

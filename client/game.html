@@ -18,7 +18,9 @@
           <div class="label">Name</div>
           <div class="ui input field">
             {{#with myUser}}
-              {{>userField}}
+              <div class="ui input field">
+                <input type="text" value={{username}}>
+              </div>
             {{/with}}
           </div>
         </div>
@@ -26,7 +28,9 @@
           <div class="label">Opponent</div>
           <div class="ui input disabled field">
             {{#with oppUser}}
-              {{>userField}}
+              <div class="ui input field">
+                <input type="text" value={{username}}>
+              </div>
             {{else}}
               <input type="text" value="Waiting for opponent">
             {{/with}}
@@ -35,10 +39,10 @@
         <div class="cooldownDropdown row">
           <div class="label">Cooldown</div>
           <select class="ui {{disabled}} dropdown field">
-            {{#each cooldownChoice in cooldownChoices}}
-              <option value="{{cooldownChoice.value}}" selected={{#if (equal cooldown cooldownChoice.value)}}selected{{/if}}>
-                {{#if cooldownChoice.value}}
-                  {{cooldownChoice.label}} seconds
+            {{#each cooldownChoices}}
+              <option value={{value}} selected={{selected}}>
+                {{#if value}}
+                  {{label}} seconds
                 {{else}}
                   No cooldown
                 {{/if}}
@@ -67,7 +71,7 @@
             <div class="shareUrlText">Share the url to play with a friend</div>
             <div class="shareUrlInput row">
               <div class="ui action input field">
-                <input type="text" value="{{gameUrl}}">
+                <input type="text" value={{gameUrl}}>
                 <button class="ui icon button copyUrlBtn" title="Copy URL">
                   <i class="copy icon"></i>
                 </button>
@@ -80,11 +84,5 @@
         </div>
       </div>
     {{/with}}
-  </div>
-</template>
-
-<template name="userField">
-  <div class="ui input field">
-    <input type="text" value="{{username}}">
   </div>
 </template>

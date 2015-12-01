@@ -1,7 +1,6 @@
 var RtsChess = Module.RtsChess;
 var User = Collections.User;
 var Game = Collections.Game;
-var Move = Collections.Move;
 var createUser = Module.Helper.createUser;
 
 Router.route('/game/:gameId', function() {
@@ -37,67 +36,42 @@ Template.registerHelper('equal', function(val1, val2) {
   return val1 === val2;
 });
 
-function getMyUser(game) {
-  var myUser = User.findOne(Session.get('userId'));
-  if (myUser._id === game.whiteUserId) {
-    return _.extend(myUser, {
-      color: RtsChess.WHITE,
-      isReady: game.whiteUserReady
-    });
-  } else {
-    return _.extend(myUser, {
-      color: RtsChess.BLACK,
-      isReady: game.blackUserReady
-    });
-  }
-}
-
-function getOppUser(game) {
-  var myUser = User.findOne(Session.get('userId'));
-  var oppUser;
-  if (myUser._id === game.whiteUserId && game.blackUserId) {
-    oppUser = User.findOne(game.blackUserId);
-    return _.extend(oppUser, {
-      color: RtsChess.BLACK,
-      isReady: game.blackUserReady
-    });
-  } else if (myUser._id === game.blackUserId && game.whiteUserId) {
-    oppUser = User.findOne(game.whiteUserId);
-    return _.extend(oppUser, {
-      color: RtsChess.WHITE,
-      isReady: game.whiteUserReady
-    });
-  }
-  return null;
-}
-
-function getGame(gameId) {
-  return Game.findOne(gameId);
-}
-
-function getMoves(gameId) {
-  return Move.find({gameId: gameId}, {sort: {moveIdx: 1}}).fetch();
-}
-
 Template.game.helpers({
   game: function() {
-    return getGame(this.gameId);
-  },
+    var game = Game.findOne(this.gameId);
 
-  moves: function() {
-    return getMoves(this._id);
-  },
+    game.myUser = User.findOne(Session.get('userId'));
+    if (game.myUser._id === game.whiteUserId) {
+      _.extend(game.myUser, {
+        color: RtsChess.WHITE,
+        isReady: game.whiteUserReady
+      });
+    } else {
+      _.extend(game.myUser, {
+        color: RtsChess.BLACK,
+        isReady: game.blackUserReady
+      });
+    }
 
-  myUser: function() {
-    return getMyUser(this);
-  },
+    if (game.myUser._id === game.whiteUserId && game.blackUserId) {
+      game.oppUser = User.findOne(game.blackUserId);
+      _.extend(game.oppUser, {
+        color: RtsChess.BLACK,
+        isReady: game.blackUserReady
+      });
+    } else if (game.myUser._id === game.blackUserId && game.whiteUserId) {
+      game.oppUser = User.findOne(game.whiteUserId);
+      _.extend(game.oppUser, {
+        color: RtsChess.WHITE,
+        isReady: game.whiteUserReady
+      });
+    }
 
-  oppUser: function() {
-    return getOppUser(this);
+    return game;
   },
 
   isBlack: function() {
-    return getMyUser(this).color === RtsChess.BLACK;
+    return this.myUser.color === RtsChess.BLACK;
   },
 
   whiteColor: function() {
@@ -109,12 +83,22 @@ Template.game.helpers({
   },
 
   cooldownChoices: function() {
-    return [
+    var choices = [
       {label: '0.0', value: 0},
       {label: '0.5', value: 500},
       {label: '1.0', value: 1000},
       {label: '2.0', value: 2000}
     ];
+
+    var cooldown = this.cooldown;
+    choices.some(function(choice) {
+      if (cooldown === choice.value) {
+        choice.selected = true;
+        return true;
+      }
+    });
+
+    return choices;
   },
 
   gameUrl: function() {
@@ -130,9 +114,9 @@ Template.game.helpers({
   },
 
   status: function() {
-    if (!getOppUser(this)) {
+    if (!this.oppUser) {
       return 'Waiting for opponent to join';
-    } else if (!getMyUser(this).isReady) {
+    } else if (!this.myUser.isReady) {
       return 'Click "Start" to begin';
     } else if (!this.startTime) {
       return 'Waiting for opponent to click "Start"';
@@ -144,32 +128,79 @@ Template.game.helpers({
   boardData: function() {
     return {
       gameId: this._id,
-      color: getMyUser(this).color
+      color: this.myUser.color
     };
+  }
+});
+
+Template.game.events({
+  'blur .myUsername input': function(e) {
+    var $target = $(e.target);
+    var userId = Session.get('userId');
+    var newUsername = $target.val();
+    if (newUsername) {
+      Meteor.call('updateUser', {
+        userId: userId,
+        username: newUsername
+      });
+    } else {
+      $target.val(User.findOne(userId).username);
+    }
+  },
+
+  'click .colorBtns .button': function(e) {
+    var $target = $(e.target);
+    var userId = Session.get('userId');
+    Meteor.call('swapPlayerColor', {
+      gameId: this._id,
+      userId: userId,
+      color: $target.attr('data-color')
+    });
+  },
+
+  'focus input': function(e) {
+    /* jshint -W101 */
+    // Select url on focus: http://stackoverflow.com/questions/3150275/jquery-input-select-all-on-focus#answer-22102081
+    /* jshint +W101 */
+    var $target = $(e.target).one('mouseup.mouseupSelect', function() {
+      $target.select();
+      return false;
+    }).one('mousedown', function() {
+      // compensate for untriggered 'mouseup' caused by focus via tab
+      $target.off('mouseup.mouseupSelect');
+    }).select();
+  },
+
+  'keypress input': function(e) {
+    if (e.which === 13 /* enter */) {
+      $(e.target).blur();
+    }
+  },
+
+  'click .shareUrlInput .copyUrlBtn': function(e) {
+    var $input = $(e.target).closest('.shareUrlInput').find('input');
+    Module.Helper.copyToClipboard($input.val());
+  },
+
+  'click .startBtn .button': function() {
+    var userId = Session.get('userId');
+    Meteor.call('startGame', {
+      gameId: this._id,
+      userId: userId
+    });
   }
 });
 
 Template.game.onRendered(function() {
   var self = this;
+
+  this.$('[title]').popup();
+
   this.autorun(function() {
-    var gameId = self.data.gameId;
-    var game = getGame(gameId);
-    var userId = Session.get('userId');
-
+    // Limit this to just changes of the cooldown value
+    var game = Game.findOne(self.data.gameId, {fields: {cooldown: 1}});
     Tracker.afterFlush(function() {
-      self.$('.myUsername input').blur(function() {
-        var $el = $(this);
-        var newUsername = $el.val();
-        if (newUsername) {
-          Meteor.call('updateUser', {
-            userId: userId,
-            username: newUsername
-          });
-        } else {
-          $el.val(User.findOne(userId).username);
-        }
-      });
-
+      // Need to reattach dropdown to pick up reactive to the cooldown value
       self.$('.ui.dropdown').dropdown({
         onChange: function(value) {
           Meteor.call('updateGame', {
@@ -178,52 +209,6 @@ Template.game.onRendered(function() {
           });
         }
       });
-
-      self.$('.colorBtns .button').click(function() {
-        Meteor.call('swapPlayerColor', {
-          gameId: game._id,
-          userId: userId,
-          color: $(this).attr('data-color')
-        });
-      });
-
-      /* jshint -W101 */
-      // Select url on focus: http://stackoverflow.com/questions/3150275/jquery-input-select-all-on-focus#answer-22102081
-      /* jshint +W101 */
-      self.$('.shareUrlInput input').focus(function() {
-        var $el = $(this).one('mouseup.mouseupSelect', function() {
-          $el.select();
-          return false;
-        }).one('mousedown', function() {
-          // compensate for untriggered 'mouseup' caused by focus via tab
-          $el.off('mouseup.mouseupSelect');
-        }).select();
-      });
-
-      self.$('.shareUrlInput .copyUrlBtn').click(function() {
-        var $input = $(this).closest('.shareUrlInput').find('input');
-        Module.Helper.copyToClipboard($input.val());
-      });
-
-      self.$('[title]').popup();
-
-      self.$('.startBtn .button').click(function() {
-        Meteor.call('startGame', {
-          gameId: game._id,
-          userId: userId
-        });
-      });
-    });
-  });
-});
-
-Template.userField.onRendered(function() {
-  var self = this;
-  this.autorun(function() {
-    self.$('input').keypress(function(e) {
-      if (e.which === 13 /* enter */) {
-        $(this).blur();
-      }
     });
   });
 });

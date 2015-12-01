@@ -89,14 +89,10 @@ Meteor.methods({
         color === RtsChess.BLACK && userId !== game.blackUserId) {
       if (color === RtsChess.WHITE) {
         updateData.whiteUserId = userId;
-        if (game.whiteUserId) {
-          updateData.blackUserId = game.whiteUserId;
-        }
+        updateData.blackUserId = game.whiteUserId;
       } else {
         updateData.blackUserId = userId;
-        if (game.blackUserId) {
-          updateData.whiteUserId = game.blackUserId;
-        }
+        updateData.whiteUserId = game.blackUserId;
       }
     }
 

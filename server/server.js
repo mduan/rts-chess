@@ -48,7 +48,7 @@ Meteor.methods({
     var gameId = Game.insert({
       createdById: userId,
       whiteUserId: userId,
-      cooldown: 0.0
+      cooldown: 0
     });
 
     _.each(RtsChess.getStartPosition(), function(piece, square) {
@@ -189,6 +189,7 @@ Meteor.methods({
         color: color,
         positions: positions
       });
+
       Position.remove({gameId: gameId, square: source});
       Position.upsert({gameId: gameId, square: target}, {
         gameId: gameId,

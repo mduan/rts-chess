@@ -108,8 +108,13 @@ Template.game.helpers({
     return RtsChess.BLACK;
   },
 
-  cooldownVals: function() {
-    return ['0.0', '0.5', '1.0', '2.0'];
+  cooldownChoices: function() {
+    return [
+      {label: '0.0', value: 0},
+      {label: '0.5', value: 500},
+      {label: '1.0', value: 1000},
+      {label: '2.0', value: 2000}
+    ];
   },
 
   gameUrl: function() {
@@ -139,9 +144,7 @@ Template.game.helpers({
   boardData: function() {
     return {
       gameId: this._id,
-      color: getMyUser(this).color,
-      started: !!this.startTime,
-      cooldown: this.cooldown
+      color: getMyUser(this).color
     };
   }
 });
@@ -171,7 +174,7 @@ Template.game.onRendered(function() {
         onChange: function(value) {
           Meteor.call('updateGame', {
             gameId: game._id,
-            cooldown: parseFloat(value)
+            cooldown: parseInt(value)
           });
         }
       });

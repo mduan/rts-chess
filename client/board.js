@@ -1,5 +1,5 @@
 var RtsChess = Module.RtsChess;
-var Move = Collections.Move;
+var Position = Collections.Position;
 
 function getXYSquare(squareBounds, x, y) {
   return squareBounds.find(function(bound) {
@@ -23,22 +23,19 @@ function getSquareBounds($squares) {
 }
 
 Template.board.onCreated(function() {
-  this.squares = new ReactiveDict();
+  this.positions = new ReactiveDict();
+  window.positions = this.positions;
   var self = this;
   this.autorun(function() {
-    var lastMove = Move.find(
-      {gameId: self.data.gameId},
-      {sort: {moveIdx: -1}, limit: 1}
+    var positions = Position.find(
+      {gameId: self.data.gameId}
     ).fetch();
 
-    if (lastMove.length) {
-      self.position = _.extend({}, lastMove[0].position);
-    } else {
-      self.position = RtsChess.getStartPosition();
-    }
-
-    _.each(self.position, function(piece, square) {
-      self.squares.set(square, piece);
+    positions.forEach(function(position) {
+      self.positions.set(position.square, {
+        piece: position.piece,
+        lastMoveTime: position.lastMoveTime
+      });
     });
   });
 });
@@ -75,15 +72,23 @@ Template.board.onRendered(function() {
   });
 
   $(window).mouseup(function() {
+    if (!self.$dragSource) {
+      return;
+    }
+
     var $sourceImg = self.$dragSource.find('img');
     if (self.$dragTarget) {
       self.$dragTarget.removeClass('board-highlight');
 
       var sourceSquare = self.$dragSource.attr('data-square');
       var targetSquare = self.$dragTarget.attr('data-square');
-      var game = new RtsChess({position: self.position});
+      var positions = {};
+      _.each(self.positions.all(), function(pieceData, position) {
+        positions[position] = pieceData.piece;
+      });
+      var chess = new RtsChess({positions: positions});
 
-      var isValid = game.makeMove({
+      var isValid = chess.makeMove({
         source: sourceSquare,
         target: targetSquare,
         color: self.data.color
@@ -175,10 +180,10 @@ Template.board.helpers({
   },
 
   piece: function(square) {
-    var piece = Template.instance().squares.get(square);
-    if (piece) {
+    var pieceData = Template.instance().positions.get(square);
+    if (pieceData) {
       return {
-        iconUrl: '/img/chesspieces/wikipedia/' + piece + '.png'
+        iconUrl: '/img/chesspieces/wikipedia/' + pieceData.piece + '.png'
       };
     } else {
       return null;

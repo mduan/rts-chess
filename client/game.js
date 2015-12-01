@@ -140,7 +140,8 @@ Template.game.helpers({
     return {
       gameId: this._id,
       color: getMyUser(this).color,
-      started: !!this.startTime
+      started: !!this.startTime,
+      cooldown: this.cooldown
     };
   }
 });

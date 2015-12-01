@@ -1,6 +1,7 @@
 var User = Collections.User;
 var Game = Collections.Game;
 var Move = Collections.Move;
+var Position = Collections.Position;
 var RtsChess = Module.RtsChess;
 var required = Module.Helper.required;
 
@@ -49,6 +50,16 @@ Meteor.methods({
       whiteUserId: userId,
       cooldown: 0.0
     });
+
+    _.each(RtsChess.getStartPosition(), function(piece, square) {
+      Position.insert({
+        gameId: gameId,
+        square: square,
+        piece: piece,
+        lastMoveTime: 0
+      });
+    });
+
     return {gameId: gameId};
   },
 
@@ -134,7 +145,7 @@ Meteor.methods({
 
     if ((game.whiteUserReady || updateData.whiteUserReady) &&
         (game.blackUserReady || updateData.blackUserReady)) {
-      updateData.startTime = new Date();
+      updateData.startTime = Date.now();
     }
 
     if (!_.isEmpty(updateData)) {
@@ -169,15 +180,22 @@ Meteor.methods({
 
     if (isValid) {
       var numMoves = Move.find({gameId: gameId}).count();
-      var record = {
+      var positions = chess.getPositions();
+      Move.insert({
         gameId: gameId,
         moveIdx: numMoves,
         source: source,
         target: target,
         color: color,
-        position: chess.getPosition()
-      };
-      Move.insert(record);
+        positions: positions
+      });
+      Position.remove({gameId: gameId, square: source});
+      Position.upsert({gameId: gameId, square: target}, {
+        gameId: gameId,
+        square: target,
+        piece: positions[target],
+        lastMoveTime: Date.now()
+      });
 
       if (chess.getWinner()) {
         Game.update(gameId, {$set: {winner: chess.getWinner()}});

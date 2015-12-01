@@ -19,18 +19,18 @@ var RtsChess = (function() {
 
   function RtsChess(options) {
     options = options || {};
-    if (options.position) {
-      this.position = _.extend({}, options.position);
+    if (options.positions) {
+      this.positions = _.extend({}, options.positions);
     } else {
-      this.position = RtsChess.getStartPosition();
+      this.positions = RtsChess.getStartPosition();
     }
     this.computeWinner();
   }
 
   _.extend(RtsChess.prototype, {
 
-    getPosition: function() {
-      return this.position;
+    getPositions: function() {
+      return this.positions;
     },
 
     isValidSquare: function(square) {
@@ -40,7 +40,7 @@ var RtsChess = (function() {
     },
 
     isOccupied: function(square) {
-      return square in this.position;
+      return square in this.positions;
     },
 
     isGameOver: function() {
@@ -52,14 +52,14 @@ var RtsChess = (function() {
       if (!this.isOccupied(square)) {
         return null;
       }
-      return this.position[square][0];
+      return this.positions[square][0];
     },
 
     getPieceType: function(square) {
       if (!this.isOccupied(square)) {
         return null;
       }
-      return this.position[square][1];
+      return this.positions[square][1];
     },
 
     getRowIdx: function(square) {
@@ -200,8 +200,8 @@ var RtsChess = (function() {
 
       // TODO(mduan): Handle promotion
 
-      this.position[target] = this.position[source];
-      delete this.position[source];
+      this.positions[target] = this.positions[source];
+      delete this.positions[source];
 
       this.computeWinner();
 
@@ -214,7 +214,7 @@ var RtsChess = (function() {
 
     // TODO(mduan): Handle when both kings are gone?
     computeWinner: function() {
-      var hasWhiteKing = _.any(this.position, function(piece) {
+      var hasWhiteKing = _.any(this.positions, function(piece) {
         return piece === WHITE + KING;
       });
       if (!hasWhiteKing) {
@@ -222,7 +222,7 @@ var RtsChess = (function() {
         return;
       }
 
-      var hasBlackKing = _.any(this.position, function(piece) {
+      var hasBlackKing = _.any(this.positions, function(piece) {
         return piece === BLACK + KING;
       });
       if (!hasBlackKing) {

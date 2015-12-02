@@ -173,6 +173,17 @@ var RtsChess = (function() {
       return false;
     },
 
+    handlePromotion: function(target) {
+      var pieceType = this.getPieceType(target);
+      var pieceColor = this.getPieceColor(target);
+      var targetRowIdx = this.getRowIdx(target);
+      if (pieceType === PAWN
+          && (pieceColor === WHITE && targetRowIdx === 7
+            || pieceColor === BLACK && targetRowIdx === 0)) {
+        this.positions[target] = pieceColor + QUEEN;
+      }
+    },
+
     makeMove: function(moveData) {
       var source = moveData.source;
       var target = moveData.target;
@@ -198,10 +209,10 @@ var RtsChess = (function() {
         return false;
       }
 
-      // TODO(mduan): Handle promotion
-
       this.positions[target] = this.positions[source];
       delete this.positions[source];
+
+      this.handlePromotion(target);
 
       this.computeWinner();
 

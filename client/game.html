@@ -5,11 +5,11 @@
     <div class="boardWrapper">
       {{>Template.dynamic template="board" data=boardData}}
     </div>
-    {{#unless startTime}}
+    {{#if status}}
       <div class="statusContainer">
         <div class="status">{{status}}</div>
       </div>
-    {{/unless}}
+    {{/if}}
   </div>
   <div class="info">
     <div class="myUsername row">

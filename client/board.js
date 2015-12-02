@@ -259,8 +259,12 @@ Template.board.events({
     e.preventDefault();
 
     var $target = $(e.target);
-
     var template = Template.instance();
+
+    if (!template.data.gameStarted || template.data.gameEnded) {
+      return;
+    }
+
     var playerColor = template.data.color;
     if (this.color !== playerColor) {
       return;

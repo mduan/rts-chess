@@ -115,7 +115,13 @@ Template.game.helpers({
   },
 
   status: function() {
-    if (!this.oppUser) {
+    if (this.winner) {
+      if (this.winner === this.myUser.color) {
+        return 'Congrats! You win :)';
+      } else {
+        return 'Sorry. You lost :(';
+      }
+    } else if (!this.oppUser) {
       return 'Waiting for opponent to join';
     } else if (!this.myUser.isReady) {
       return 'Click "Start" to begin';
@@ -129,6 +135,9 @@ Template.game.helpers({
   boardData: function() {
     return {
       gameId: this._id,
+      // TODO(mduan): Normalize gameStarted and gameOver into one field
+      gameStarted: !!this.startTime,
+      gameEnded: !!this.winner,
       color: this.myUser.color,
       cooldown: this.cooldown
     };

@@ -88,7 +88,15 @@ Template.game.helpers({
       {label: '0.0', value: 0},
       {label: '0.5', value: 500},
       {label: '1.0', value: 1000},
-      {label: '2.0', value: 2000}
+      {label: '2.0', value: 2000},
+      {label: '3.0', value: 3000},
+      {label: '5.0', value: 5000},
+      {label: '10.0', value: 10000},
+      {label: '15.0', value: 15000},
+      {label: '20.0', value: 20000},
+      {label: '30.0', value: 30000},
+      {label: '45.0', value: 45000},
+      {label: '60.0', value: 60000}
     ];
 
     var cooldown = this.cooldown;

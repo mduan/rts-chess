@@ -253,6 +253,29 @@ var RtsChess = (function() {
     }
   };
 
+  RtsChess.getSquares = function(color) {
+    color = color || RtsChess.WHITE;
+    var rowIndices;
+    var colIndices;
+    if (color === RtsChess.WHITE) {
+      rowIndices = _.range(RtsChess.NUM_ROWS - 1, -1, -1);
+      colIndices = _.range(RtsChess.NUM_COLS);
+    } else {
+      rowIndices = _.range(RtsChess.NUM_ROWS);
+      colIndices = _.range(RtsChess.NUM_COLS - 1, -1, -1);
+    }
+
+    var rows = [];
+    _.each(rowIndices, function(rowIdx) {
+      var row = [];
+      _.each(colIndices, function(colIdx) {
+        row.push(RtsChess.toSquare(rowIdx, colIdx));
+      });
+      rows.push(row);
+    });
+    return rows;
+  };
+
   return RtsChess;
 })();
 

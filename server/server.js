@@ -1,7 +1,6 @@
 var User = Collections.User;
 var Game = Collections.Game;
 var Move = Collections.Move;
-var Position = Collections.Position;
 var RtsChess = Module.RtsChess;
 var required = Module.Helper.required;
 
@@ -51,13 +50,17 @@ Meteor.methods({
       cooldown: 0
     });
 
+    var positions = {};
     _.each(RtsChess.getStartPosition(), function(piece, square) {
-      Position.insert({
-        gameId: gameId,
-        square: square,
+      positions[square] = {
         piece: piece,
         lastMoveTime: 0
-      });
+      };
+    });
+    Move.insert({
+      gameId: gameId,
+      moveIdx: 0,
+      positions: positions
     });
 
     return {gameId: gameId};
@@ -160,13 +163,12 @@ Meteor.methods({
     var lastMove = Move.find(
       {gameId: gameId},
       {sort: {moveIdx: -1}, limit: 1}
-    ).fetch();
-    var chess;
-    if (lastMove.length) {
-      chess = new RtsChess({position: lastMove[0].position});
-    } else {
-      chess = new RtsChess();
-    }
+    ).fetch()[0];
+    var positions = {};
+    _.each(lastMove.positions, function(pieceData, position) {
+      positions[position] = pieceData.piece;
+    });
+    var chess = new RtsChess({positions: positions});
 
     var isValid = chess.makeMove({
       source: source,
@@ -175,23 +177,21 @@ Meteor.methods({
     });
 
     if (isValid) {
+      // TODO(mduan): Clean this up? Maybe have RtsChess return positions
+      // with lastMoveTime as part of .getPositions()?
+      delete lastMove.positions[source];
+      lastMove.positions[target] = {
+        piece: chess.getPositions()[target],
+        lastMoveTime: Date.now()
+      };
       var numMoves = Move.find({gameId: gameId}).count();
-      var positions = chess.getPositions();
       Move.insert({
         gameId: gameId,
         moveIdx: numMoves,
         source: source,
         target: target,
         color: color,
-        positions: positions
-      });
-
-      Position.remove({gameId: gameId, square: source});
-      Position.upsert({gameId: gameId, square: target}, {
-        gameId: gameId,
-        square: target,
-        piece: positions[target],
-        lastMoveTime: Date.now()
+        positions: lastMove.positions
       });
 
       if (chess.getWinner()) {

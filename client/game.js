@@ -4,41 +4,9 @@ var Game = Collections.Game;
 var createUser = Module.Helper.createUser;
 
 Router.route('/game/:gameId', function() {
-  function joinGame(renderFunc, gameId, userId) {
-    Meteor.call('joinGame', {gameId: gameId, userId: userId},
-      function() {
-        renderFunc('game', {
-          data: function() {
-            return {gameId: gameId};
-          }
-        });
-      }
-    );
-  }
 
-  var renderFunc = this.render.bind(this);
-  var gameId = this.params.gameId;
-  var userId = Session.get('userId');
-  if (!userId) {
-    createUser(function(userId) {
-      joinGame(renderFunc, gameId, userId);
-    });
-  } else {
-    joinGame(renderFunc, gameId, userId);
-  }
-});
-
-Template.registerHelper('toFloat', function(str) {
-  return parseFloat(str);
-});
-
-Template.registerHelper('equal', function(val1, val2) {
-  return val1 === val2;
-});
-
-Template.game.helpers({
-  game: function() {
-    var game = Game.findOne(this.gameId);
+  function getGame(gameId) {
+    var game = Game.findOne(gameId);
 
     game.myUser = User.findOne(Session.get('userId'));
     if (game.myUser._id === game.whiteUserId) {
@@ -68,8 +36,41 @@ Template.game.helpers({
     }
 
     return game;
-  },
+  }
 
+  function joinGame(renderFunc, gameId, userId) {
+    Meteor.call('joinGame', {gameId: gameId, userId: userId},
+      function() {
+        renderFunc('game', {
+          data: function() {
+            return getGame(gameId);
+          }
+        });
+      }
+    );
+  }
+
+  var renderFunc = this.render.bind(this);
+  var gameId = this.params.gameId;
+  var userId = Session.get('userId');
+  if (!userId) {
+    createUser(function(userId) {
+      joinGame(renderFunc, gameId, userId);
+    });
+  } else {
+    joinGame(renderFunc, gameId, userId);
+  }
+});
+
+Template.registerHelper('toFloat', function(str) {
+  return parseFloat(str);
+});
+
+Template.registerHelper('equal', function(val1, val2) {
+  return val1 === val2;
+});
+
+Template.game.helpers({
   isBlack: function() {
     return this.myUser.color === RtsChess.BLACK;
   },
@@ -128,7 +129,8 @@ Template.game.helpers({
   boardData: function() {
     return {
       gameId: this._id,
-      color: this.myUser.color
+      color: this.myUser.color,
+      cooldown: this.cooldown
     };
   }
 });
@@ -191,20 +193,37 @@ Template.game.events({
   }
 });
 
+Template.game.onCreated(function() {
+  var self = this;
+
+  this.reactiveVars = {
+    _id: new ReactiveVar(),
+    cooldown: new ReactiveVar()
+  };
+
+  this.autorun(function() {
+    var data = Template.currentData();
+    self.reactiveVars._id.set(data._id);
+    self.reactiveVars.cooldown.set(data.cooldown);
+  });
+});
+
 Template.game.onRendered(function() {
   var self = this;
 
   this.$('[title]').popup();
 
   this.autorun(function() {
+    var gameId = self.reactiveVars._id.get();
     // Limit this to just changes of the cooldown value
-    var game = Game.findOne(self.data.gameId, {fields: {cooldown: 1}});
+    self.reactiveVars.cooldown.get();
     Tracker.afterFlush(function() {
-      // Need to reattach dropdown to pick up reactive to the cooldown value
+      // Need to reattach dropdown to pick up reactive changes to the
+      // cooldown value
       self.$('.ui.dropdown').dropdown({
         onChange: function(value) {
           Meteor.call('updateGame', {
-            gameId: game._id,
+            gameId: gameId,
             cooldown: parseInt(value)
           });
         }

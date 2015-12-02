@@ -1,88 +1,85 @@
 <template name="game">
-  <h1>RTS Chess</h1>
-
-  <div id="game">
-    {{#with game}}
-      <div class="boardContainer">
-        <div class="boardWrapper">
-          {{>Template.dynamic template="board" data=boardData}}
-        </div>
-        {{#unless startTime}}
-          <div class="statusContainer">
-            <div class="status">{{status}}</div>
-          </div>
-        {{/unless}}
+<h1>RTS Chess</h1>
+<div class="game">
+  <div class="boardContainer">
+    <div class="boardWrapper">
+      {{>Template.dynamic template="board" data=boardData}}
+    </div>
+    {{#unless startTime}}
+      <div class="statusContainer">
+        <div class="status">{{status}}</div>
       </div>
-      <div class="info">
-        <div class="myUsername row">
-          <div class="label">Name</div>
-          <div class="ui input field">
-            {{#with myUser}}
-              <div class="ui input field">
-                <input type="text" value={{username}}>
-              </div>
-            {{/with}}
-          </div>
-        </div>
-        <div class="oppUsername row">
-          <div class="label">Opponent</div>
-          <div class="ui input disabled field">
-            {{#with oppUser}}
-              <div class="ui input field">
-                <input type="text" value={{username}}>
-              </div>
-            {{else}}
-              <input type="text" value="Waiting for opponent">
-            {{/with}}
-          </div>
-        </div>
-        <div class="cooldownDropdown row">
-          <div class="label">Cooldown</div>
-          <select class="ui {{disabled}} dropdown field">
-            {{#each cooldownChoices}}
-              <option value={{value}} selected={{selected}}>
-                {{#if value}}
-                  {{label}} seconds
-                {{else}}
-                  No cooldown
-                {{/if}}
-              </option>
-            {{/each}}
-          </select>
-        </div>
-        <div class="colorBtns row">
-          <div class="label">Color</div>
-          <div class="ui basic buttons field">
-            <div class="ui {{disabled}} button {{#unless isBlack}}active{{/unless}}" data-color="{{whiteColor}}">White</div>
-            <div class="ui {{disabled}} button {{#if isBlack}}active{{/if}}" data-color="{{blackColor}}">Black</div>
-          </div>
-        </div>
-        <!--
-        <div class="versusBtns row">
-          <div class="label">Versus</div>
-          <div class="ui basic buttons field">
-            <div class="ui {{disabled}} button active">Human</div>
-            <div class="ui {{disabled}} button">Computer</div>
-          </div>
-        </div>
-        -->
-        {{#unless disabled}}
-          <div class="shareUrl">
-            <div class="shareUrlText">Share the url to play with a friend</div>
-            <div class="shareUrlInput row">
-              <div class="ui action input field">
-                <input type="text" value={{gameUrl}}>
-                <button class="ui icon button copyUrlBtn" title="Copy URL">
-                  <i class="copy icon"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        {{/unless}}
-        <div class="startBtn row">
-          <div class="ui {{#unless oppUser}}disabled{{/unless}} primary button">Start</div>
-        </div>
-      </div>
-    {{/with}}
+    {{/unless}}
   </div>
+  <div class="info">
+    <div class="myUsername row">
+      <div class="label">Name</div>
+      <div class="ui input field">
+        {{#with myUser}}
+          <div class="ui input field">
+            <input type="text" value={{username}}>
+          </div>
+        {{/with}}
+      </div>
+    </div>
+    <div class="oppUsername row">
+      <div class="label">Opponent</div>
+      <div class="ui input disabled field">
+        {{#with oppUser}}
+          <div class="ui input field">
+            <input type="text" value={{username}}>
+          </div>
+        {{else}}
+          <input type="text" value="Waiting for opponent">
+        {{/with}}
+      </div>
+    </div>
+    <div class="cooldownDropdown row">
+      <div class="label">Cooldown</div>
+      <select class="ui {{disabled}} dropdown field">
+        {{#each cooldownChoices}}
+          <option value={{value}} selected={{selected}}>
+            {{#if value}}
+              {{label}} seconds
+            {{else}}
+              No cooldown
+            {{/if}}
+          </option>
+        {{/each}}
+      </select>
+    </div>
+    <div class="colorBtns row">
+      <div class="label">Color</div>
+      <div class="ui basic buttons field">
+        <div class="ui {{disabled}} button {{#unless isBlack}}active{{/unless}}" data-color="{{whiteColor}}">White</div>
+        <div class="ui {{disabled}} button {{#if isBlack}}active{{/if}}" data-color="{{blackColor}}">Black</div>
+      </div>
+    </div>
+    <!--
+    <div class="versusBtns row">
+      <div class="label">Versus</div>
+      <div class="ui basic buttons field">
+        <div class="ui {{disabled}} button active">Human</div>
+        <div class="ui {{disabled}} button">Computer</div>
+      </div>
+    </div>
+    -->
+    {{#unless disabled}}
+      <div class="shareUrl">
+        <div class="shareUrlText">Share the url to play with a friend</div>
+        <div class="shareUrlInput row">
+          <div class="ui action input field">
+            <input type="text" value={{gameUrl}}>
+            <button class="ui icon button copyUrlBtn" title="Copy URL">
+              <i class="copy icon"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    {{/unless}}
+    <div class="startBtn row">
+      <div class="ui {{#unless oppUser}}disabled{{/unless}} primary button">Start</div>
+    </div>
+  </div>
+</div>
 </template>

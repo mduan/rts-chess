@@ -1,15 +1,15 @@
 <template name="board">
-  <div class="board">
-    {{#each row in rows}}
-      <div class="board-row">
-        {{#each square in row}}
-          <div class="board-square board-{{square.color}}" data-square="{{square.square}}">
-            {{#with piece square.square}}
-              <img src="{{iconUrl}}">
-            {{/with}}
-          </div>
-        {{/each}}
-      </div>
-    {{/each}}
-  </div>
+<div class="board">
+  {{#each row in rows}}
+    <div class="board-row">
+      {{#each square in row}}
+        <div class="board-square board-{{square.color}}" data-square={{square.square}}>
+          {{#with piece square.square}}
+            <img src={{iconUrl}}>
+          {{/with}}
+        </div>
+      {{/each}}
+    </div>
+  {{/each}}
+</div>
 </template>

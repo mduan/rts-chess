@@ -1,7 +1,6 @@
 var required = Module.Helper.required;
 var RtsChess = Module.RtsChess;
-var Game = Collections.Game;
-var Position = Collections.Position;
+var Move = Collections.Move;
 
 var CooldownAnimator = (function() {
   function CooldownAnimator(options) {
@@ -23,7 +22,7 @@ var CooldownAnimator = (function() {
       return this.getSquareEl(square).find('canvas');
     },
 
-    updateCooldown: function(cooldown) {
+    setCooldown: function(cooldown) {
       this.cooldown = cooldown;
     },
 
@@ -45,6 +44,10 @@ var CooldownAnimator = (function() {
       $canvas[0].height = $square.height();
       $square.append($canvas);
       this.lastMoveTimes[square] = lastMoveTime;
+    },
+
+    isAnimating: function(square) {
+      return square in this.lastMoveTimes;
     },
 
     stopAnimation: function(square) {
@@ -121,29 +124,43 @@ function getSquareBounds($squares) {
 Template.board.onCreated(function() {
   var self = this;
 
-  this.positions = new ReactiveDict();
+  this.reactiveVars = {
+    squares: new ReactiveDict(),
+    cooldown: new ReactiveVar()
+  };
 
-// TODO(mduan): Remove this hack for getting the new cooldown
   this.autorun(function() {
-    var game = Game.findOne(self.data.gameId);
-    if (self.cooldownAnimator) {
-      self.cooldownAnimator.updateCooldown(game.cooldown);
+    var data = Template.currentData();
+    self.reactiveVars.cooldown.set(data.cooldown);
+  });
+
+  this.autorun(function(computation) {
+    var cooldown = self.reactiveVars.cooldown.get();
+    if (computation.firstRun) {
+      self.cooldownAnimator = new CooldownAnimator({cooldown: cooldown});
     } else {
-      self.cooldownAnimator = new CooldownAnimator({
-        cooldown: game.cooldown
-      });
+      self.cooldownAnimator.setCooldown(cooldown);
     }
   });
 
   this.autorun(function() {
-    var positions = Position.find(
-      {gameId: self.data.gameId}
-    ).fetch();
+    var lastMove = Move.find(
+      {gameId: self.data.gameId},
+      {sort: {moveIdx: -1}, limit: 1}
+    ).fetch()[0];
+    var positions = lastMove.positions;
 
-    positions.forEach(function(position) {
-      self.positions.set(position.square, {
-        piece: position.piece,
-        lastMoveTime: position.lastMoveTime
+    RtsChess.getSquares().forEach(function(rowSquares) {
+      rowSquares.forEach(function(square) {
+        if (square in positions) {
+          var position = positions[square];
+          self.reactiveVars.squares.set(square, {
+            piece: position.piece,
+            lastMoveTime: position.lastMoveTime
+          });
+        } else {
+          self.reactiveVars.squares.set(square, null);
+        }
       });
     });
   });
@@ -153,8 +170,7 @@ Template.board.onRendered(function() {
   var self = this;
 
   this.squareBounds = getSquareBounds(this.$('.board-square'));
-  // TODO(mduan): Remove hack, and use .board as the root element
-  self.cooldownAnimator.ready($('.boardWrapper'));
+  this.cooldownAnimator.ready(this.$('.board'));
 
   $(window).mousemove(function(e) {
     var $dragPiece = self.$dragPiece;
@@ -194,8 +210,10 @@ Template.board.onRendered(function() {
       var sourceSquare = self.$dragSource.attr('data-square');
       var targetSquare = self.$dragTarget.attr('data-square');
       var positions = {};
-      _.each(self.positions.all(), function(pieceData, position) {
-        positions[position] = pieceData.piece;
+      _.each(self.reactiveVars.squares.all(), function(pieceData, position) {
+        if (pieceData) {
+          positions[position] = pieceData.piece;
+        }
       });
       var chess = new RtsChess({positions: positions});
 
@@ -206,15 +224,24 @@ Template.board.onRendered(function() {
       });
 
       if (isValid) {
+        // TODO(mduan): Blaze doesn't when doing
+        // $dragTarget.append($sourceImg). This is probably because doing this
+        // messes with the DOM in a way it can't deal with. Should find a
+        // cleaner way for doing this than the current hack.
+        var $targetImg = self.$dragTarget.find('img');
+        if ($targetImg.length) {
+          $targetImg.attr('src', $sourceImg.attr('src'));
+          $sourceImg.remove();
+        } else {
+          self.$dragTarget.append($sourceImg);
+        }
+
         Meteor.call('makeMove', {
           gameId: self.data.gameId,
           source: sourceSquare,
           target: targetSquare,
           color: self.data.color
         });
-
-        self.$dragTarget.find('img').remove();
-        self.$dragTarget.append($sourceImg);
       }
     }
 
@@ -230,7 +257,20 @@ Template.board.onRendered(function() {
 Template.board.events({
   'mousedown .board-square img': function(e) {
     e.preventDefault();
+
     var $target = $(e.target);
+
+    var template = Template.instance();
+    var playerColor = template.data.color;
+    if (this.color !== playerColor) {
+      return;
+    }
+
+    var square = $target.closest('.board-square').attr('data-square');
+    if (template.cooldownAnimator.isAnimating(square)) {
+      return;
+    }
+
     var width = $target.width();
     var height = $target.height();
     var $img = $('<img>')
@@ -245,8 +285,6 @@ Template.board.events({
         'left': e.pageX - width/2
       });
 
-    var template = Template.instance();
-
     $('body').append($img);
     template.$dragPiece = $img;
 
@@ -258,46 +296,36 @@ Template.board.events({
 Template.board.helpers({
   rows: function() {
     var rows = [];
-
-    var rowIndices;
-    var colIndices;
     var currColor = RtsChess.WHITE;
-    if (this.color === RtsChess.WHITE) {
-      rowIndices = _.range(RtsChess.NUM_ROWS - 1, -1, -1);
-      colIndices = _.range(RtsChess.NUM_COLS);
-    } else {
-      rowIndices = _.range(RtsChess.NUM_ROWS);
-      colIndices = _.range(RtsChess.NUM_COLS - 1, -1, -1);
-    }
-
-    _.each(rowIndices, function(rowIdx) {
+    RtsChess.getSquares(this.color).forEach(function(rowSquares) {
       var row = [];
-      _.each(colIndices, function(colIdx) {
+      rowSquares.forEach(function(square) {
         if (row.length) {
           // The first square in row has same color as last square in previous
           // row. So only swap color if not the first square.
           currColor = RtsChess.swapColor(currColor);
         }
         var data = {
-          square: RtsChess.toSquare(rowIdx, colIdx),
+          square: square,
           color: currColor
         };
         row.push(data);
       });
       rows.push(row);
     });
-
     return rows;
   },
 
   piece: function(square) {
     var template = Template.instance();
-    var pieceData = template.positions.get(square);
+    var pieceData = template.reactiveVars.squares.get(square);
     var cooldownAnimator = template.cooldownAnimator;
     if (pieceData) {
       cooldownAnimator.startAnimation(square, pieceData.lastMoveTime);
       return {
-        iconUrl: '/img/chesspieces/wikipedia/' + pieceData.piece + '.png'
+        iconUrl: '/img/chesspieces/wikipedia/' + pieceData.piece + '.png',
+        // TODO(mduan): Refactor this
+        color: pieceData.piece[0]
       };
     } else {
       cooldownAnimator.stopAnimation(square);

@@ -5,6 +5,8 @@ var requireUser = Module.Helper.requireUser;
 
 Router.route('/game/:gameId', function() {
 
+  this.render('loading', {data: {message: 'Loading game'}});
+
   function getGame(gameId) {
     var game = Game.findOne(gameId);
 

@@ -1,6 +1,5 @@
 var required = Module.Helper.required;
-var createUser = Module.Helper.createUser;
-var User = Collections.User;
+var requireUser = Module.Helper.requireUser;
 
 function createGame(options) {
   var userId = required(options.userId);
@@ -10,13 +9,7 @@ function createGame(options) {
 }
 
 Router.route('/', function() {
-  var userId = Session.get('userId');
-  if (!userId || !User.find(userId).count()) {
-    // TODO(mduan): Remove user from Session before calling createUser
-    createUser(function(userId) {
-      createGame({userId: userId});
-    });
-  } else {
+  requireUser(function(userId) {
     createGame({userId: userId});
-  }
+  });
 });

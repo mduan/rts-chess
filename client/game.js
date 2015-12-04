@@ -1,7 +1,7 @@
 var RtsChess = Module.RtsChess;
 var User = Collections.User;
 var Game = Collections.Game;
-var createUser = Module.Helper.createUser;
+var requireUser = Module.Helper.requireUser;
 
 Router.route('/game/:gameId', function() {
 
@@ -52,14 +52,9 @@ Router.route('/game/:gameId', function() {
 
   var renderFunc = this.render.bind(this);
   var gameId = this.params.gameId;
-  var userId = Session.get('userId');
-  if (!userId) {
-    createUser(function(userId) {
-      joinGame(renderFunc, gameId, userId);
-    });
-  } else {
+  requireUser(function(userId) {
     joinGame(renderFunc, gameId, userId);
-  }
+  });
 });
 
 Template.registerHelper('toFloat', function(str) {

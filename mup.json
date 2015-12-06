@@ -31,7 +31,7 @@
   // Location of app (local directory)
   "app": ".",
 
-  "meteorBinary": "~/bin/meteor-debug",
+  "meteorBinary": "private/meteor-debug",
 
   // Configure environment
   "env": {

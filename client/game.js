@@ -7,10 +7,10 @@ Router.route('/game/:gameId', function() {
 
   this.render('loading', {data: {message: 'Loading game'}});
 
-  function getGame(gameId) {
+  function getGame(gameId, userId) {
     var game = Game.findOne(gameId);
 
-    game.myUser = User.findOne(Session.get('userId'));
+    game.myUser = User.findOne(userId);
     if (game.myUser._id === game.whiteUserId) {
       _.extend(game.myUser, {
         color: RtsChess.WHITE,
@@ -45,7 +45,7 @@ Router.route('/game/:gameId', function() {
       function() {
         renderFunc('game', {
           data: function() {
-            return getGame(gameId);
+            return getGame(gameId, userId);
           }
         });
       }

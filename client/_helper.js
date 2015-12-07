@@ -8,8 +8,15 @@ Module.Helper = _.extend(Module.Helper, {
   },
 
   requireUser: function(callback) {
-    var userId = Session.get('userId');
-    if (!userId || !Collections.User.find(userId).count()) {
+    var userId;
+    var user;
+    Tracker.nonreactive(function() {
+      userId = Session.get('userId');
+      if (userId) {
+        user = Collections.User.findOne(userId);
+      }
+    });
+    if (!user) {
       // TODO(mduan): Remove user from Session before calling createUser
       Meteor.call('createUser', function(_, result) {
         var userId = result.userId;
@@ -19,5 +26,5 @@ Module.Helper = _.extend(Module.Helper, {
     } else {
       callback(userId);
     }
-  },
+  }
 });

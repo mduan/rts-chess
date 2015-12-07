@@ -170,6 +170,12 @@ Meteor.methods({
     });
     var chess = new RtsChess({positions: positions});
 
+    var elapsedTime = Date.now() - lastMove.positions[source].lastMoveTime;
+    var game = Game.findOne(gameId);
+    if (elapsedTime < game.cooldown) {
+      return {success: false};
+    }
+
     var isValid = chess.makeMove({
       source: source,
       target: target,
@@ -200,7 +206,7 @@ Meteor.methods({
 
       return {success: true};
     } else {
-      return {success: true};
+      return {success: false};
     }
   }
 });

@@ -27,9 +27,19 @@ var CooldownAnimator = (function() {
     },
 
     startAnimation: function(square, lastMoveTime) {
-      var elapsedTime = Date.now() - lastMoveTime;
+      var serverOffset = 0;
+      Tracker.nonreactive(function() {
+        serverOffset = window.TimeSync.serverOffset();
+      });
+      var currTime = Date.now();
+      var lastMoveAdjustedTime = (lastMoveTime - serverOffset);
+      var elapsedTime = currTime - lastMoveAdjustedTime;
       if (elapsedTime > this.cooldown) {
         return;
+      }
+
+      if (elapsedTime < 0) {
+        lastMoveAdjustedTime = currTime;
       }
 
       this.stopAnimation(square);
@@ -43,7 +53,7 @@ var CooldownAnimator = (function() {
       $canvas[0].width = $square.width();
       $canvas[0].height = $square.height();
       $square.append($canvas);
-      this.lastMoveTimes[square] = lastMoveTime;
+      this.lastMoveTimes[square] = lastMoveAdjustedTime;
     },
 
     isAnimating: function(square) {

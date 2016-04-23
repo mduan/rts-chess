@@ -2,7 +2,6 @@ Router.route('/', function() {
   this.render('index', {data: {}});
 });
 
-
 Template.index.onCreated(function() {
   this.subscribe('user');
 });

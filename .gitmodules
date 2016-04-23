@@ -1,0 +1,3 @@
+[submodule "packages/mduan_timesync"]
+	path = packages/mduan_timesync
+	url = https://github.com/mduan/meteor-timesync.git

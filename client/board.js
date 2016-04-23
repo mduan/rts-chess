@@ -124,6 +124,8 @@ function getSquareBounds($squares) {
 Template.board.onCreated(function() {
   var self = this;
 
+  this.subscribe('move');
+
   this.reactiveVars = {
     squares: new ReactiveDict(),
     cooldown: new ReactiveVar()
@@ -144,6 +146,10 @@ Template.board.onCreated(function() {
   });
 
   this.autorun(function() {
+    if (!Template.instance().subscriptionsReady()) {
+      return;
+    }
+
     var lastMove = Move.find(
       {gameId: self.data.gameId},
       {sort: {moveIdx: -1}, limit: 1}
@@ -155,6 +161,7 @@ Template.board.onCreated(function() {
         if (square in positions) {
           var position = positions[square];
           self.reactiveVars.squares.set(square, {
+            pending: position.pending,
             piece: position.piece,
             lastMoveTime: position.lastMoveTime
           });
@@ -170,7 +177,8 @@ Template.board.onRendered(function() {
   var self = this;
 
   this.squareBounds = getSquareBounds(this.$('.board-square'));
-  this.cooldownAnimator.ready(this.$('.board'));
+  this.$board = this.$('.board');
+  this.cooldownAnimator.ready(this.$board);
 
   $(window).mousemove(function(e) {
     var $dragPiece = self.$dragPiece;
@@ -209,39 +217,42 @@ Template.board.onRendered(function() {
 
       var sourceSquare = self.$dragSource.attr('data-square');
       var targetSquare = self.$dragTarget.attr('data-square');
-      var positions = {};
-      _.each(self.reactiveVars.squares.all(), function(pieceData, position) {
-        if (pieceData) {
-          positions[position] = pieceData.piece;
-        }
-      });
-      var chess = new RtsChess({positions: positions});
+      //var positions = {};
+      //_.each(self.reactiveVars.squares.all(), function(pieceData, position) {
+      //  if (pieceData) {
+      //    positions[position] = pieceData.piece;
+      //  }
+      //});
+      //var chess = new RtsChess({positions: positions});
 
-      var isValid = chess.makeMove({
+      //var isValid = chess.makeMove({
+      //  source: sourceSquare,
+      //  target: targetSquare,
+      //  color: self.data.color
+      //});
+
+      var response = Meteor.apply('makeMove', [{
+        gameId: self.data.gameId,
         source: sourceSquare,
         target: targetSquare,
         color: self.data.color
+      }], {
+        returnStubValue: true
       });
-
-      if (isValid) {
+      if (response.success) {
         // TODO(mduan): Blaze doesn't when doing
         // $dragTarget.append($sourceImg). This is probably because doing this
         // messes with the DOM in a way it can't deal with. Should find a
         // cleaner way for doing this than the current hack.
-        var $targetImg = self.$dragTarget.find('img');
-        if ($targetImg.length) {
-          $targetImg.attr('src', $sourceImg.attr('src'));
-          $sourceImg.remove();
-        } else {
-          self.$dragTarget.append($sourceImg);
-        }
-
-        Meteor.call('makeMove', {
-          gameId: self.data.gameId,
-          source: sourceSquare,
-          target: targetSquare,
-          color: self.data.color
-        });
+        //var $targetImg = self.$dragTarget.find('img');
+        //if ($targetImg.length) {
+        //  $targetImg.attr('src', $sourceImg.attr('src'));
+        //  $sourceImg.remove();
+        //} else {
+        //  self.$dragTarget.append($sourceImg);
+        //}
+        // self.$dragTarget.addClass('board-pending');
+        $sourceImg.remove();
       }
     }
 
@@ -299,6 +310,7 @@ Template.board.events({
 
 Template.board.helpers({
   rows: function() {
+    var template = Template.instance();
     var rows = [];
     var currColor = RtsChess.WHITE;
     RtsChess.getSquares(this.color).forEach(function(rowSquares) {
@@ -309,7 +321,9 @@ Template.board.helpers({
           // row. So only swap color if not the first square.
           currColor = RtsChess.swapColor(currColor);
         }
+        var pieceData = template.reactiveVars.squares.get(square);
         var data = {
+          pending: !!(pieceData && pieceData.pending),
           square: square,
           color: currColor
         };
@@ -322,10 +336,14 @@ Template.board.helpers({
 
   piece: function(square) {
     var template = Template.instance();
+
     var pieceData = template.reactiveVars.squares.get(square);
     var cooldownAnimator = template.cooldownAnimator;
     if (pieceData) {
-      cooldownAnimator.startAnimation(square, pieceData.lastMoveTime);
+      if (!pieceData.pending) {
+        cooldownAnimator.startAnimation(square, pieceData.lastMoveTime);
+      }
+
       return {
         iconUrl: '/img/chesspieces/wikipedia/' + pieceData.piece + '.png',
         // TODO(mduan): Refactor this

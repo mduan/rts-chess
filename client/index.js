@@ -1,25 +1,34 @@
-var required = Module.Helper.required;
-var requireUser = Module.Helper.requireUser;
-
-function createGame(options) {
-  var userId = required(options.userId);
-  var callback = required(options.callback);
-  Meteor.call('createGame', {userId: userId}, function(_, result) {
-    callback(result.gameId);
-  });
-}
-
 Router.route('/', function() {
-  var self = this;
+  this.render('index', {data: {}});
+});
 
-  this.render('loading', {data: {message: 'Creating game'}});
 
-  requireUser(function(userId) {
-    createGame({
-      userId: userId,
-      callback: function(gameId) {
-        self.redirect('/game/' + gameId);
-      }
+Template.index.onCreated(function() {
+  this.subscribe('user');
+});
+
+Template.index.onRendered(function() {
+  this.autorun(function() {
+    if (!Template.instance().subscriptionsReady()) {
+      return;
+    }
+
+    var user;
+    var userId = Session.get('userId');
+    if (userId) {
+      user = Collections.User.findOne(userId);
+    }
+    if (!user) {
+      // TODO(mduan): Remove user from Session before calling createUser
+      Meteor.call('createUser', function(_, result) {
+        var userId = result.userId;
+        Session.setPersistent('userId', userId);
+      });
+      return;
+    }
+
+    Meteor.call('createGame', {userId: userId}, function(_, result) {
+      Router.go('/game/' + result.gameId);
     });
   });
 });

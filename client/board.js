@@ -227,19 +227,6 @@ Template.board.onRendered(function() {
 
       var sourceSquare = self.$dragSource.attr('data-square');
       var targetSquare = self.$dragTarget.attr('data-square');
-      //var positions = {};
-      //_.each(self.reactiveVars.squares.all(), function(pieceData, position) {
-      //  if (pieceData) {
-      //    positions[position] = pieceData.piece;
-      //  }
-      //});
-      //var chess = new RtsChess({positions: positions});
-
-      //var isValid = chess.makeMove({
-      //  source: sourceSquare,
-      //  target: targetSquare,
-      //  color: self.data.color
-      //});
 
       var response = Meteor.apply('makeMove', [{
         gameId: self.data.gameId,
@@ -250,18 +237,6 @@ Template.board.onRendered(function() {
         returnStubValue: true
       });
       if (response.success) {
-        // TODO(mduan): Blaze doesn't when doing
-        // $dragTarget.append($sourceImg). This is probably because doing this
-        // messes with the DOM in a way it can't deal with. Should find a
-        // cleaner way for doing this than the current hack.
-        //var $targetImg = self.$dragTarget.find('img');
-        //if ($targetImg.length) {
-        //  $targetImg.attr('src', $sourceImg.attr('src'));
-        //  $sourceImg.remove();
-        //} else {
-        //  self.$dragTarget.append($sourceImg);
-        //}
-        // self.$dragTarget.addClass('board-pending');
         $sourceImg.remove();
       }
     }

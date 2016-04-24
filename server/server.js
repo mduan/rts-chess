@@ -14,6 +14,37 @@ Meteor.publish('move', function() {
   return Move.find();
 });
 
+function getGameUsers(options) {
+  var blackUser;
+  var blackUserId = options.blackUserId;
+  if (blackUserId) {
+    blackUser = User.findOne(blackUserId);
+  }
+  var whiteUser;
+  var whiteUserId = options.whiteUserId;
+  if (whiteUserId) {
+    whiteUser = User.findOne(whiteUserId);
+  }
+
+  var createdByUser;
+  var oppUser;
+  if (options.createdById === whiteUserId) {
+    createdByUser = whiteUser;
+    oppUser = blackUser;
+  }
+  if (options.createdById === blackUserId) {
+    createdByUser = blackUser;
+    oppUser = whiteUser;
+  }
+
+  return {
+    white: whiteUser,
+    black: blackUser,
+    createdBy: createdByUser,
+    opp: oppUser
+  };
+}
+
 Meteor.methods({
   reset: function() {
     Meteor.call('resetGames');
@@ -28,8 +59,11 @@ Meteor.methods({
     Move.remove({});
   },
 
-  createUser: function() {
-    var userId = Collections.User.insert({});
+  createUser: function(options) {
+    options = options || {};
+    var userId = Collections.User.insert({
+      isComputer: !!options.isComputer
+    });
     Meteor.call('updateUser', {
       userId: userId,
       username: 'user' + userId
@@ -54,10 +88,19 @@ Meteor.methods({
 
   createGame: function(options) {
     var userId = required(options.userId);
+
+    var createUserResult = Meteor.call(
+      'createUser',
+      {isComputer: true}
+    );
+    // TODO: Refactor hardcoded values
     var gameId = Game.insert({
+      computerDifficulty: 2,
       createdById: userId,
       whiteUserId: userId,
-      cooldown: 0
+      blackUserId: createUserResult.userId,
+      blackUserReady: true,
+      cooldown: 3000
     });
 
     var positions = {};
@@ -86,8 +129,53 @@ Meteor.methods({
       updateData.cooldown = cooldown;
     }
 
+    var computerDifficulty = options.computerDifficulty;
+    if (_.isFinite(computerDifficulty) &&
+        computerDifficulty !== game.computerDifficulty) {
+      updateData.computerDifficulty = computerDifficulty;
+    }
+
     if (!_.isEmpty(updateData)) {
       Game.update(gameId, {$set: updateData});
+    }
+  },
+
+  setOppType: function(options) {
+    var gameId = required(options.gameId);
+    var oppType = required(options.oppType);
+    var game = Game.findOne(gameId);
+
+    var gameUsers = getGameUsers(game);
+
+    if (oppType === RtsChess.OPP_TYPE_HUMAN) {
+      if (gameUsers.opp && gameUsers.opp.isComputer) {
+        var unsetData = {};
+        if (gameUsers.opp === gameUsers.white) {
+          unsetData.whiteUserId = true;
+          unsetData.whiteUserReady = true;
+        } else {
+          unsetData.blackUserId = true;
+          unsetData.blackUserReady = true;
+        }
+        User.remove(gameUsers.opp._id);
+        Game.update(gameId, {$unset: unsetData});
+      }
+    } else if (oppType === RtsChess.OPP_TYPE_COMPUTER) {
+      if (!gameUsers.opp) {
+        var createUserResult = Meteor.call(
+          'createUser',
+          {isComputer: true}
+        );
+        var setData = {};
+        if (gameUsers.createdBy === gameUsers.white) {
+          setData.blackUserId = createUserResult.userId;
+          setData.blackUserReady = true;
+        } else {
+          setData.whiteUserId = createUserResult.userId;
+          setData.whiteUserReady = true;
+        }
+        Game.update(gameId, {$set: setData});
+      }
     }
   },
 
@@ -107,6 +195,8 @@ Meteor.methods({
         updateData.blackUserId = userId;
         updateData.whiteUserId = game.blackUserId;
       }
+      updateData.whiteUserReady = game.whiteUserReady;
+      updateData.blackUserReady = game.blackUserReady;
     }
 
     if (!_.isEmpty(updateData)) {
@@ -124,12 +214,23 @@ Meteor.methods({
       return {success: true};
     }
 
-    if (!game.whiteUserId || !game.blackUserId) {
-      if (!game.whiteUserId) {
-        updateData.whiteUserId = userId;
-      } else {
-        updateData.blackUserId = userId;
-      }
+    var whiteUser;
+    if (game.whiteUserId) {
+      whiteUser = User.findOne(game.whiteUserId);
+    }
+    var blackUser;
+    if (game.blackUserId) {
+      blackUser = User.findOne(game.blackUserId);
+    }
+
+    // Setting *UserReady as well since there might have been a computer
+    // player whose *UserReady is defaulted to true
+    if (!whiteUser || whiteUser.isComputer) {
+      updateData.whiteUserId = userId;
+      updateData.whiteUserReady = false;
+    } else if (!blackUser || blackUser.isComputer) {
+      updateData.blackUserId = userId;
+      updateData.blackUserReady = false;
     }
 
     if (!_.isEmpty(updateData)) {

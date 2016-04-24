@@ -22,18 +22,36 @@
         {{/with}}
       </div>
     </div>
-    <div class="oppUsername row">
-      <div class="label">Opponent</div>
-      <div class="ui input disabled field">
-        {{#with oppUser}}
-          <div class="ui input field">
-            <input type="text" value={{username}}>
-          </div>
-        {{else}}
-          <input type="text" value="Waiting for opponent">
-        {{/with}}
+    <div class="oppTypeBtns row">
+      <div class="label">Versus</div>
+      <div class="ui basic buttons field">
+        <div class="ui {{disabled}} {{oppComputerDisabled}} button {{#if isOppComputer}}active{{/if}}" data-value="{{oppTypeComputer}}">Computer</div>
+        <div class="ui {{disabled}} button {{#unless isOppComputer}}active{{/unless}}" data-value="{{oppTypeHuman}}">Human</div>
       </div>
     </div>
+    {{#if isOppComputer}}
+      <div class="computerDifficultyBtns row">
+        <div class="label">Difficulty</div>
+        <div class="ui basic buttons field">
+          {{#each computerDifficultyChoices}}
+            <div class="ui button {{disabled}} {{#if selected}}active{{/if}}" data-value={{value}}>{{label}}</div>
+          {{/each}}
+        </div>
+      </div>
+    {{else}}
+      <div class="oppUsername row">
+        <div class="label">Opponent</div>
+        <div class="ui input disabled field">
+          {{#with oppUser}}
+            <div class="ui input field">
+              <input type="text" value={{username}}>
+            </div>
+          {{else}}
+            <input type="text" value="Waiting for opponent">
+          {{/with}}
+        </div>
+      </div>
+    {{/if}}
     <div class="cooldownDropdown row">
       <div class="label">Cooldown</div>
       <select class="ui {{disabled}} dropdown field">

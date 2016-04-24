@@ -22,6 +22,40 @@ Template.game.helpers({
     return RtsChess.BLACK;
   },
 
+  oppTypeComputer: function() {
+    return RtsChess.OPP_TYPE_COMPUTER;
+  },
+
+  oppTypeHuman: function() {
+    return RtsChess.OPP_TYPE_HUMAN;
+  },
+
+  oppComputerDisabled: function() {
+    if (this.oppUser && !this.oppUser.isComputer) {
+      return 'disabled';
+    } else {
+      return null;
+    }
+  },
+
+  computerDifficultyChoices: function() {
+    var choices = [
+      {label: '1', value: 1},
+      {label: '2', value: 2},
+      {label: '3', value: 3}
+    ];
+
+    var computerDifficulty = this.computerDifficulty;
+    choices.some(function(choice) {
+      if (computerDifficulty === choice.value) {
+        choice.selected = true;
+        return true;
+      }
+    });
+
+    return choices;
+  },
+
   cooldownChoices: function() {
     var choices = [
       {label: '0.0', value: 0},
@@ -54,7 +88,7 @@ Template.game.helpers({
   },
 
   disabled: function() {
-    if (Session.get('userId') !== this.createdById) {
+    if (Session.get('userId') !== Template.instance().data.createdById) {
       return 'disabled';
     } else {
       return null;
@@ -86,7 +120,9 @@ Template.game.helpers({
       gameStarted: !!this.startTime,
       gameEnded: !!this.winner,
       color: this.myUser.color,
-      cooldown: this.cooldown
+      cooldown: this.cooldown,
+      isOppComputer: this.isOppComputer,
+      computerDifficulty: this.computerDifficulty
     };
   }
 });
@@ -106,6 +142,23 @@ Template.game.events({
     }
   },
 
+  'click .oppTypeBtns .button': function(e) {
+    var $target = $(e.target);
+    Meteor.call('setOppType', {
+      gameId: this._id,
+      oppType: $target.attr('data-value')
+    });
+  },
+
+  'click .computerDifficultyBtns .button': function(e) {
+    var $target = $(e.target);
+    var gameId = Template.instance().data._id;
+    Meteor.call('updateGame', {
+      gameId: gameId,
+      computerDifficulty: parseInt($target.attr('data-value'))
+    });
+  },
+
   'click .colorBtns .button': function(e) {
     var $target = $(e.target);
     var userId = Session.get('userId');
@@ -117,9 +170,9 @@ Template.game.events({
   },
 
   'focus input': function(e) {
-    /* jshint -W101 */
+    /* jshint ignore:start */
     // Select url on focus: http://stackoverflow.com/questions/3150275/jquery-input-select-all-on-focus#answer-22102081
-    /* jshint +W101 */
+    /* jshint ignore:end */
     var $target = $(e.target).one('mouseup.mouseupSelect', function() {
       $target.select();
       return false;

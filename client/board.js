@@ -191,7 +191,8 @@ Template.board.onCreated(function() {
       color: oppColor
     });
 
-    setTimeout(makeComputerMove, 2000);
+    var delay = (6 / self.data.computerDifficulty) * 1000;
+    setTimeout(makeComputerMove, delay);
   }
 
   this.autorun(function(computation) {
@@ -202,7 +203,7 @@ Template.board.onCreated(function() {
     if (!data.gameStarted) {
       return;
     }
-    if (self.data.color === RtsChess.WHITE) {
+    if (self.data.isOppComputer) {
       makeComputerMove();
     }
     computation.stop();

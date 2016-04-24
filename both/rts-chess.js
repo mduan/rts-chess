@@ -291,6 +291,9 @@ var RtsChess = (function() {
   RtsChess.WHITE = WHITE;
   RtsChess.NUM_ROWS = 8;
   RtsChess.NUM_COLS = 8;
+  // TODO: Move somewhere more sensible
+  RtsChess.OPP_TYPE_COMPUTER = 'c';
+  RtsChess.OPP_TYPE_HUMAN = 'h';
 
   RtsChess.getStartPosition = function() {
     return _.extend({}, START_POSITION);

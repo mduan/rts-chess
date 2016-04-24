@@ -71,6 +71,8 @@ Template.gameContainer.helpers({
       });
     }
 
+    game.isOppComputer = !!(game.oppUser && game.oppUser.isComputer);
+
     return game;
   }
 });

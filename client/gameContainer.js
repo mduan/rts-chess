@@ -1,6 +1,7 @@
 var RtsChess = Module.RtsChess;
 var User = Collections.User;
 var Game = Collections.Game;
+var Board = Collections.Board;
 
 Router.route('/game/:gameId', function() {
   this.render('gameContainer', {data: {gameId: this.params.gameId}});
@@ -10,6 +11,7 @@ Template.gameContainer.onCreated(function() {
   var self = this;
 
   this.subscribe('game');
+  this.subscribe('board');
 
   this.reactiveVars = {
     hasJoinedGame: new ReactiveVar()
@@ -72,6 +74,11 @@ Template.gameContainer.helpers({
     }
 
     game.isOppComputer = !!(game.oppUser && game.oppUser.isComputer);
+    if (game.currBoardId) {
+      game.board = Board.findOne(game.currBoardId);
+    } else {
+      game.board = {};
+    }
 
     return game;
   }

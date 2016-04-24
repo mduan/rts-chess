@@ -1,5 +1,6 @@
 var User = Collections.User;
 var Game = Collections.Game;
+var Board = Collections.Board;
 var Move = Collections.Move;
 var RtsChess = Module.RtsChess;
 var required = Module.Helper.required;
@@ -9,6 +10,9 @@ Meteor.publish('user', function() {
 });
 Meteor.publish('game', function() {
   return Game.find();
+});
+Meteor.publish('board', function() {
+  return Board.find();
 });
 Meteor.publish('move', function() {
   return Move.find();
@@ -43,6 +47,27 @@ function getGameUsers(options) {
     createdBy: createdByUser,
     opp: oppUser
   };
+}
+
+function createBoard(gameId) {
+  var boardId = Board.insert({
+    gameId: gameId
+  });
+
+  Game.update(gameId, {$set: {currBoardId: boardId}});
+
+  var positions = {};
+  _.each(RtsChess.getStartPosition(), function(piece, square) {
+    positions[square] = {
+      piece: piece,
+      lastMoveTime: 0
+    };
+  });
+  Move.insert({
+    boardId: boardId,
+    moveIdx: 0,
+    positions: positions
+  });
 }
 
 Meteor.methods({
@@ -101,19 +126,6 @@ Meteor.methods({
       blackUserId: createUserResult.userId,
       blackUserReady: true,
       cooldown: 3000
-    });
-
-    var positions = {};
-    _.each(RtsChess.getStartPosition(), function(piece, square) {
-      positions[square] = {
-        piece: piece,
-        lastMoveTime: 0
-      };
-    });
-    Move.insert({
-      gameId: gameId,
-      moveIdx: 0,
-      positions: positions
     });
 
     return {gameId: gameId};
@@ -241,7 +253,7 @@ Meteor.methods({
     }
   },
 
-  startGame: function(options) {
+  startBoard: function(options) {
     var gameId = required(options.gameId);
     var userId = required(options.userId);
     var game = Game.findOne(gameId);
@@ -253,32 +265,74 @@ Meteor.methods({
       updateData.blackUserReady = true;
     }
 
+    var success = false;
     if ((game.whiteUserReady || updateData.whiteUserReady) &&
         (game.blackUserReady || updateData.blackUserReady)) {
-      updateData.startTime = Date.now();
+      success = true;
+      createBoard(gameId);
     }
 
     if (!_.isEmpty(updateData)) {
       Game.update(gameId, {$set: updateData});
     }
 
-    return {success: !!updateData.startTime};
+    return {success: success};
+  },
+
+  resignBoard: function(options) {
+    var gameId = required(options.gameId);
+    var userId = required(options.userId);
+    var game = Game.findOne(gameId);
+
+    if (!game.currBoardId) {
+      return {success: false};
+    }
+
+    var winner;
+    var gameUsers = getGameUsers(game);
+    var whiteUserReady = false;
+    var blackUserReady = false;
+    if (userId === game.whiteUserId) {
+      winner = RtsChess.BLACK;
+      if (gameUsers.opp.isComputer) {
+        blackUserReady = true;
+      }
+    } else {
+      winner = RtsChess.WHITE;
+      if (gameUsers.opp.isComputer) {
+        whiteUserReady = true;
+      }
+    }
+
+    Board.update(game.currBoardId, {
+      $set: {winner: winner}
+    });
+
+    Game.update(gameId, {
+      $set: {
+        whiteUserReady: whiteUserReady,
+        blackUserReady: blackUserReady
+      }
+    });
+
+    return {success: true};
   },
 
   makeMove: function(options) {
-    var gameId = required(options.gameId);
+    var boardId = required(options.boardId);
     var source = required(options.source);
     var target = required(options.target);
     var color = required(options.color);
 
     var lastMove = Move.find(
-      {gameId: gameId},
+      {boardId: boardId},
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch()[0];
     var chess = RtsChess.fromMovePositions(lastMove.positions);
 
     var elapsedTime = Date.now() - lastMove.positions[source].lastMoveTime;
-    var game = Game.findOne(gameId);
+    var board = Board.findOne(boardId);
+    var game = Game.findOne(board.gameId);
     if (elapsedTime < game.cooldown) {
       return {success: false};
     }
@@ -297,9 +351,9 @@ Meteor.methods({
         piece: chess.getPositions()[target],
         lastMoveTime: Date.now()
       };
-      var numMoves = Move.find({gameId: gameId}).count();
+      var numMoves = Move.find({boardId: boardId}).count();
       Move.insert({
-        gameId: gameId,
+        boardId: boardId,
         moveIdx: numMoves,
         source: source,
         target: target,
@@ -308,7 +362,7 @@ Meteor.methods({
       });
 
       if (chess.getWinner()) {
-        Game.update(gameId, {$set: {winner: chess.getWinner()}});
+        Board.update(boardId, {$set: {winner: chess.getWinner()}});
       }
 
       return {success: true};

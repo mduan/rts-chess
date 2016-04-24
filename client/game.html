@@ -82,7 +82,7 @@
       </div>
     </div>
     -->
-    {{#unless disabled}}
+    {{#unless isHumanOpp}}
       <div class="shareUrl">
         <div class="shareUrlText">Share the url to play with a friend</div>
         <div class="shareUrlInput row">
@@ -95,9 +95,21 @@
         </div>
       </div>
     {{/unless}}
-    <div class="startBtn row">
-      <div class="ui {{#unless oppUser}}disabled{{/unless}} primary button">Start</div>
-    </div>
+    {{#if isGameOver}}
+      <div class="startBtn row">
+        <div class="ui {{#unless oppUser}}disabled{{/unless}} primary button">Play again</div>
+      </div>
+    {{else}}
+      {{#if isGameInProgress}}
+        <div class="resignBtn row">
+          <div class="ui primary button">Resign</div>
+        </div>
+      {{else}}
+        <div class="startBtn row">
+          <div class="ui {{#unless oppUser}}disabled{{/unless}} primary button">Start</div>
+        </div>
+      {{/if}}
+    {{/if}}
   </div>
 </div>
 </template>

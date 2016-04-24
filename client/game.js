@@ -1,6 +1,10 @@
 var RtsChess = Module.RtsChess;
 var User = Collections.User;
 
+function isGameInProgress(data) {
+  return !!(!data.board.winner && data.board._id);
+}
+
 Template.registerHelper('toFloat', function(str) {
   return parseFloat(str);
 });
@@ -28,6 +32,10 @@ Template.game.helpers({
 
   oppTypeHuman: function() {
     return RtsChess.OPP_TYPE_HUMAN;
+  },
+
+  isHumanOpp: function() {
+    return !!(this.oppUser && !this.oppUser.isComputer);
   },
 
   oppComputerDisabled: function() {
@@ -88,16 +96,30 @@ Template.game.helpers({
   },
 
   disabled: function() {
-    if (Session.get('userId') !== Template.instance().data.createdById) {
+    Template.currentData();
+    var template = Template.instance();
+    var data = template.data;
+    if (Session.get('userId') !== data.createdById ||
+        isGameInProgress(data)) {
+      template.reactiveVars.settingsDisabled.set(true);
       return 'disabled';
     } else {
+      template.reactiveVars.settingsDisabled.set(false);
       return null;
     }
   },
 
+  isGameOver: function() {
+    return !!this.board.winner;
+  },
+
+  isGameInProgress: function() {
+    return isGameInProgress(this);
+  },
+
   status: function() {
-    if (this.winner) {
-      if (this.winner === this.myUser.color) {
+    if (this.board.winner) {
+      if (this.board.winner === this.myUser.color) {
         return 'Congrats! You win :)';
       } else {
         return 'Sorry. You lost :(';
@@ -106,7 +128,7 @@ Template.game.helpers({
       return 'Waiting for opponent to join';
     } else if (!this.myUser.isReady) {
       return 'Click "Start" to begin';
-    } else if (!this.startTime) {
+    } else if (!this.board._id) {
       return 'Waiting for opponent to click "Start"';
     } else {
       return null;
@@ -116,9 +138,10 @@ Template.game.helpers({
   boardData: function() {
     return {
       gameId: this._id,
+      boardId: this.board._id,
       // TODO(mduan): Normalize gameStarted and gameOver into one field
-      gameStarted: !!this.startTime,
-      gameEnded: !!this.winner,
+      gameStarted: !!this.board._id,
+      gameEnded: !!this.board.winner,
       color: this.myUser.color,
       cooldown: this.cooldown,
       isOppComputer: this.isOppComputer,
@@ -195,7 +218,15 @@ Template.game.events({
 
   'click .startBtn .button': function() {
     var userId = Session.get('userId');
-    Meteor.call('startGame', {
+    Meteor.call('startBoard', {
+      gameId: this._id,
+      userId: userId
+    });
+  },
+
+  'click .resignBtn .button': function() {
+    var userId = Session.get('userId');
+    Meteor.call('resignBoard', {
       gameId: this._id,
       userId: userId
     });
@@ -207,7 +238,8 @@ Template.game.onCreated(function() {
 
   this.reactiveVars = {
     _id: new ReactiveVar(),
-    cooldown: new ReactiveVar()
+    cooldown: new ReactiveVar(),
+    settingsDisabled: new ReactiveVar()
   };
 
   this.autorun(function() {
@@ -226,9 +258,15 @@ Template.game.onRendered(function() {
     var gameId = self.reactiveVars._id.get();
     // Limit this to just changes of the cooldown value
     self.reactiveVars.cooldown.get();
+    var settingsDisabled = self.reactiveVars.settingsDisabled.get();
     Tracker.afterFlush(function() {
       // Need to reattach dropdown to pick up reactive changes to the
       // cooldown value
+      if (settingsDisabled) {
+        self.$('.ui.dropdown').addClass('disabled');
+      } else {
+        self.$('.ui.dropdown').removeClass('disabled');
+      }
       self.$('.ui.dropdown').dropdown({
         onChange: function(value) {
           Meteor.call('updateGame', {

@@ -153,12 +153,35 @@ Template.board.onCreated(function() {
   this.reactiveVars = {
     squares: new ReactiveDict(),
     cooldown: new ReactiveVar(),
-    pendingMoves: new ReactiveVar([])
+    pendingMoves: new ReactiveVar([]),
+    gameInProgress: new ReactiveVar()
   };
 
+  function updateSquares(positions) {
+    RtsChess.getSquares().forEach(function(rowSquares) {
+      rowSquares.forEach(function(square) {
+        if (square in positions) {
+          var position = positions[square];
+          self.reactiveVars.squares.set(square, {
+            lastMoveTime: position.lastMoveTime,
+            isPendingMove: position.isPendingMove,
+            piece: position.piece
+          });
+        } else {
+          self.reactiveVars.squares.set(square, null);
+        }
+      });
+    });
+  }
+
+  var computerMoveTimer;
   function makeComputerMove() {
+    if (!self.reactiveVars.gameInProgress.get()) {
+      return;
+    }
+
     var lastMove = Move.find(
-      {gameId: self.data.gameId},
+      {boardId: self.data.boardId},
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch()[0];
     var positions = lastMove.positions;
@@ -182,33 +205,38 @@ Template.board.onCreated(function() {
     var oppSourceSquare = RtsChess.idxToSquare(moveData[0]);
     var oppTargetSquare = RtsChess.idxToSquare(moveData[1]);
     Meteor.call('makeMove', {
-      gameId: self.data.gameId,
+      boardId: self.data.boardId,
       source: oppSourceSquare,
       target: oppTargetSquare,
       color: oppColor
     });
 
     var delay = (6 - difficulty) * 1000;
-    setTimeout(makeComputerMove, delay);
+    computerMoveTimer = setTimeout(makeComputerMove, delay);
   }
 
   this.autorun(function() {
     var data = Template.currentData();
     self.reactiveVars.cooldown.set(data.cooldown);
+    self.reactiveVars.gameInProgress.set(
+      data.gameStarted && !data.gameEnded
+    );
   });
 
-  this.autorun(function(computation) {
+  this.autorun(function() {
     if (!self.subscriptionsReady()) {
       return;
     }
-    var data = Template.currentData();
-    if (!data.gameStarted) {
+    if (!self.reactiveVars.gameInProgress.get()) {
       return;
     }
-    if (self.data.isOppComputer) {
-      setTimeout(makeComputerMove, 1000);
+
+    if (computerMoveTimer) {
+      clearTimeout(computerMoveTimer);
     }
-    computation.stop();
+    if (self.data.isOppComputer) {
+      computerMoveTimer = setTimeout(makeComputerMove, 1000);
+    }
   });
 
   this.autorun(function(computation) {
@@ -225,8 +253,13 @@ Template.board.onCreated(function() {
       return;
     }
 
+    var data = Template.currentData();
+    if (!data.boardId) {
+      return;
+    }
+
     var lastMove = Move.find(
-      {gameId: self.data.gameId},
+      {boardId: self.data.boardId},
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch()[0];
     var positions = lastMove.positions;
@@ -262,20 +295,7 @@ Template.board.onCreated(function() {
       }
     });
 
-    RtsChess.getSquares().forEach(function(rowSquares) {
-      rowSquares.forEach(function(square) {
-        if (square in positions) {
-          var position = positions[square];
-          self.reactiveVars.squares.set(square, {
-            lastMoveTime: position.lastMoveTime,
-            isPendingMove: position.isPendingMove,
-            piece: position.piece
-          });
-        } else {
-          self.reactiveVars.squares.set(square, null);
-        }
-      });
-    });
+    updateSquares(positions);
   });
 });
 
@@ -350,7 +370,7 @@ Template.board.onRendered(function() {
         newPendingMoves.push(pendingMove);
         pendingMoves.set(newPendingMoves);
         Meteor.call('makeMove', {
-          gameId: self.data.gameId,
+          boardId: self.data.boardId,
           source: sourceSquare,
           target: targetSquare,
           color: self.data.color

@@ -155,11 +155,57 @@ Template.board.onCreated(function() {
     cooldown: new ReactiveVar(),
     pendingMoves: new ReactiveVar([])
   };
-  this.lastMoveIdx = 0;
 
   this.autorun(function() {
     var data = Template.currentData();
     self.reactiveVars.cooldown.set(data.cooldown);
+  });
+
+  function makeComputerMove() {
+    var lastMove = Move.find(
+      {gameId: self.data.gameId},
+      {sort: {moveIdx: -1}, limit: 1}
+    ).fetch()[0];
+    var chess = RtsChess.fromMovePositions(lastMove.positions);
+
+    var oppColor = RtsChess.swapColor(self.data.color);
+    var fen = chess.getFen(
+      oppColor,
+      lastMove.lastMoveIdx + 1
+    );
+
+    var moveData = ChessAi.findMove(fen, undefined, function(sourceIdx) {
+      var square = RtsChess.idxToSquare(sourceIdx);
+      var pieceData = self.reactiveVars.squares.get(square);
+      var cooldownData = self.cooldownAnimator.getCooldownData(
+        pieceData.lastMoveTime
+      );
+      return !cooldownData.cooldown;
+    });
+    var oppSourceSquare = RtsChess.idxToSquare(moveData[0]);
+    var oppTargetSquare = RtsChess.idxToSquare(moveData[1]);
+    Meteor.call('makeMove', {
+      gameId: self.data.gameId,
+      source: oppSourceSquare,
+      target: oppTargetSquare,
+      color: oppColor
+    });
+
+    setTimeout(makeComputerMove, 2000);
+  }
+
+  this.autorun(function(computation) {
+    if (!self.subscriptionsReady()) {
+      return;
+    }
+    var data = Template.currentData();
+    if (!data.gameStarted) {
+      return;
+    }
+    if (self.data.color === RtsChess.WHITE) {
+      makeComputerMove();
+    }
+    computation.stop();
   });
 
   this.autorun(function(computation) {
@@ -172,7 +218,7 @@ Template.board.onCreated(function() {
   });
 
   this.autorun(function() {
-    if (!Template.instance().subscriptionsReady()) {
+    if (!self.subscriptionsReady()) {
       return;
     }
 
@@ -181,7 +227,6 @@ Template.board.onCreated(function() {
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch()[0];
     var positions = lastMove.positions;
-    self.lastMoveIdx = lastMove.moveIdx;
 
     var pendingMoves = self.reactiveVars.pendingMoves;
 
@@ -311,29 +356,6 @@ Template.board.onRendered(function() {
           if (index >= 0) {
             pendingMoves.get().splice(index, 1);
           }
-        });
-
-        var oppColor = RtsChess.swapColor(self.data.color);
-        var fen = chess.getFen(
-          oppColor,
-          self.lastMoveIdx + 1
-        );
-
-        var moveData = ChessAi.findMove(fen, undefined, function(sourceIdx) {
-          var square = RtsChess.idxToSquare(sourceIdx);
-          var pieceData = self.reactiveVars.squares.get(square);
-          var cooldownData = self.cooldownAnimator.getCooldownData(
-            pieceData.lastMoveTime
-          );
-          return !cooldownData.cooldown;
-        });
-        var oppSourceSquare = RtsChess.idxToSquare(moveData[0]);
-        var oppTargetSquare = RtsChess.idxToSquare(moveData[1]);
-        Meteor.call('makeMove', {
-          gameId: self.data.gameId,
-          source: oppSourceSquare,
-          target: oppTargetSquare,
-          color: oppColor
         });
 
         $sourceImg.remove();

@@ -256,6 +256,14 @@ var RtsChess = (function() {
     return String.fromCharCode('a'.charCodeAt(0) + colIdx) + (rowIdx + 1);
   };
 
+  RtsChess.fromMovePositions = function(movePositions) {
+    var positions = {};
+    _.each(movePositions, function(pieceData, position) {
+      positions[position] = pieceData.piece;
+    });
+    return new RtsChess({positions: positions});
+  };
+
   RtsChess.swapColor = function(color) {
     if (color === WHITE) {
       return BLACK;

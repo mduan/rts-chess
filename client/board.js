@@ -138,7 +138,8 @@ Template.board.onCreated(function() {
 
   this.reactiveVars = {
     squares: new ReactiveDict(),
-    cooldown: new ReactiveVar()
+    cooldown: new ReactiveVar(),
+    pendingMoves: new ReactiveVar([])
   };
 
   this.autorun(function() {
@@ -166,14 +167,45 @@ Template.board.onCreated(function() {
     ).fetch()[0];
     var positions = lastMove.positions;
 
+    var pendingMoves = self.reactiveVars.pendingMoves;
+
+    var invalidPendingMoves = [];
+    var chess = RtsChess.fromMovePositions(lastMove.positions);
+    pendingMoves.get().forEach(function(pendingMove) {
+      var chessPositions = chess.getPositions();
+      if (chessPositions[pendingMove.source] === pendingMove.piece) {
+        var isValid = chess.makeMove({
+          source: pendingMove.source,
+          target: pendingMove.target,
+          color: self.data.color
+        });
+        if (isValid) {
+          delete positions[pendingMove.source];
+          positions[pendingMove.target] = {
+            piece: chessPositions[pendingMove.target],
+            isPendingMove: true
+          };
+        } else {
+          invalidPendingMoves.push(pendingMove);
+        }
+      }
+    });
+
+    invalidPendingMoves.forEach(function(pendingMove) {
+      var index = pendingMoves.get().indexOf(pendingMove);
+      if (index >= 0) {
+        pendingMoves.get().splice(index, 1);
+      }
+    });
+
     RtsChess.getSquares().forEach(function(rowSquares) {
       rowSquares.forEach(function(square) {
         if (square in positions) {
           var position = positions[square];
           self.reactiveVars.squares.set(square, {
-            pending: position.pending,
-            piece: position.piece,
-            lastMoveTime: position.lastMoveTime
+            lastMoveTime: position.lastMoveTime,
+            isPendingMove: position.isPendingMove,
+            piece: position.piece
           });
         } else {
           self.reactiveVars.squares.set(square, null);
@@ -228,15 +260,42 @@ Template.board.onRendered(function() {
       var sourceSquare = self.$dragSource.attr('data-square');
       var targetSquare = self.$dragTarget.attr('data-square');
 
-      var response = Meteor.apply('makeMove', [{
-        gameId: self.data.gameId,
+      var pieceData = self.reactiveVars.squares.get(sourceSquare);
+
+      var positions = {};
+      _.each(self.reactiveVars.squares.all(), function(pieceData, position) {
+        if (pieceData) {
+          positions[position] = pieceData.piece;
+        }
+      });
+      var chess = new RtsChess({positions: positions});
+      var isValid = chess.makeMove({
         source: sourceSquare,
         target: targetSquare,
         color: self.data.color
-      }], {
-        returnStubValue: true
       });
-      if (response.success) {
+
+      if (isValid) {
+        var pendingMoves = self.reactiveVars.pendingMoves;
+        var pendingMove = {
+          piece: pieceData.piece,
+          source: sourceSquare,
+          target: targetSquare
+        };
+        var newPendingMoves = pendingMoves.get();
+        newPendingMoves.push(pendingMove);
+        pendingMoves.set(newPendingMoves);
+        Meteor.call('makeMove', {
+          gameId: self.data.gameId,
+          source: sourceSquare,
+          target: targetSquare,
+          color: self.data.color
+        }, function() {
+          var index = pendingMoves.get().indexOf(pendingMove);
+          if (index >= 0) {
+            pendingMoves.get().splice(index, 1);
+          }
+        });
         $sourceImg.remove();
       }
     }
@@ -308,7 +367,7 @@ Template.board.helpers({
         }
         var pieceData = template.reactiveVars.squares.get(square);
         var data = {
-          pending: !!(pieceData && pieceData.pending),
+          isPendingMove: !!(pieceData && pieceData.isPendingMove),
           square: square,
           color: currColor
         };
@@ -325,7 +384,7 @@ Template.board.helpers({
     var pieceData = template.reactiveVars.squares.get(square);
     var cooldownAnimator = template.cooldownAnimator;
     if (pieceData) {
-      if (!pieceData.pending) {
+      if (!pieceData.isPendingMove) {
         cooldownAnimator.startAnimation(square, pieceData.lastMoveTime);
       }
 

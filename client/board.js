@@ -29,7 +29,7 @@ var CooldownAnimator = (function() {
     startAnimation: function(square, lastMoveTime) {
       var serverOffset = 0;
       Tracker.nonreactive(function() {
-        serverOffset = window.TimeSync.serverOffset();
+        serverOffset = TimeSync.serverOffset();
       });
       var currTime = Date.now();
       var lastMoveAdjustedTime = (lastMoveTime - serverOffset);

@@ -156,17 +156,13 @@ Template.board.onCreated(function() {
     pendingMoves: new ReactiveVar([])
   };
 
-  this.autorun(function() {
-    var data = Template.currentData();
-    self.reactiveVars.cooldown.set(data.cooldown);
-  });
-
   function makeComputerMove() {
     var lastMove = Move.find(
       {gameId: self.data.gameId},
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch()[0];
-    var chess = RtsChess.fromMovePositions(lastMove.positions);
+    var positions = lastMove.positions;
+    var chess = RtsChess.fromMovePositions(positions);
 
     var oppColor = RtsChess.swapColor(self.data.color);
     var fen = chess.getFen(
@@ -174,9 +170,10 @@ Template.board.onCreated(function() {
       lastMove.lastMoveIdx + 1
     );
 
-    var moveData = ChessAi.findMove(fen, undefined, function(sourceIdx) {
+    var difficulty = self.data.computerDifficulty;
+    var moveData = ChessAi.findMove(fen, difficulty - 1, function(sourceIdx) {
       var square = RtsChess.idxToSquare(sourceIdx);
-      var pieceData = self.reactiveVars.squares.get(square);
+      var pieceData = positions[square];
       var cooldownData = self.cooldownAnimator.getCooldownData(
         pieceData.lastMoveTime
       );
@@ -191,9 +188,14 @@ Template.board.onCreated(function() {
       color: oppColor
     });
 
-    var delay = (6 / self.data.computerDifficulty) * 1000;
+    var delay = (6 - difficulty) * 1000;
     setTimeout(makeComputerMove, delay);
   }
+
+  this.autorun(function() {
+    var data = Template.currentData();
+    self.reactiveVars.cooldown.set(data.cooldown);
+  });
 
   this.autorun(function(computation) {
     if (!self.subscriptionsReady()) {
@@ -204,7 +206,7 @@ Template.board.onCreated(function() {
       return;
     }
     if (self.data.isOppComputer) {
-      makeComputerMove();
+      setTimeout(makeComputerMove, 1000);
     }
     computation.stop();
   });

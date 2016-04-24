@@ -706,6 +706,12 @@ function p4_findmove(state, level, colour, ep){
         ep = state.enpassant;
     }
     var movelist = p4_parse(state, colour, ep, 0);
+    if (state.validateMoveFn) {
+      var origNumMoves = movelist.length;
+      movelist = movelist.filter(function(mv) {
+        return state.validateMoveFn(mv[1], mv[2]);
+      });
+    }
     var alpha = P4_MIN_SCORE;
     var mv, t, i;
     var bs = 0;
@@ -1589,8 +1595,9 @@ function p4_random_int(state, top){
 }
 
 ChessAi = {
-  findMove: function(fen, depth) {
+  findMove: function(fen, depth, validateMoveFn) {
     var state = p4_fen2state(fen);
+    state.validateMoveFn = validateMoveFn;
     return state.findmove(depth);
   }
 };

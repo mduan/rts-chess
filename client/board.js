@@ -26,7 +26,7 @@ var CooldownAnimator = (function() {
       this.cooldown = cooldown;
     },
 
-    startAnimation: function(square, lastMoveTime) {
+    getCooldownData: function(lastMoveTime) {
       var serverOffset = 0;
       Tracker.nonreactive(function() {
         serverOffset = TimeSync.serverOffset();
@@ -35,11 +35,25 @@ var CooldownAnimator = (function() {
       var lastMoveAdjustedTime = (lastMoveTime - serverOffset);
       var elapsedTime = currTime - lastMoveAdjustedTime;
       if (elapsedTime > this.cooldown) {
-        return;
+        return {
+          cooldown: false
+        };
       }
 
       if (elapsedTime < 0) {
         lastMoveAdjustedTime = currTime;
+      }
+
+      return {
+        cooldown: true,
+        lastMoveAdjustedTime: lastMoveAdjustedTime
+      };
+    },
+
+    startAnimation: function(square, lastMoveTime) {
+      var cooldownData = this.getCooldownData(lastMoveTime);
+      if (!cooldownData.cooldown) {
+        return;
       }
 
       this.stopAnimation(square);
@@ -53,7 +67,7 @@ var CooldownAnimator = (function() {
       $canvas[0].width = $square.width();
       $canvas[0].height = $square.height();
       $square.append($canvas);
-      this.lastMoveTimes[square] = lastMoveAdjustedTime;
+      this.lastMoveTimes[square] = cooldownData.lastMoveAdjustedTime;
     },
 
     isAnimating: function(square) {
@@ -304,7 +318,15 @@ Template.board.onRendered(function() {
           oppColor,
           self.lastMoveIdx + 1
         );
-        var moveData = ChessAi.findMove(fen);
+
+        var moveData = ChessAi.findMove(fen, undefined, function(sourceIdx) {
+          var square = RtsChess.idxToSquare(sourceIdx);
+          var pieceData = self.reactiveVars.squares.get(square);
+          var cooldownData = self.cooldownAnimator.getCooldownData(
+            pieceData.lastMoveTime
+          );
+          return !cooldownData.cooldown;
+        });
         var oppSourceSquare = RtsChess.idxToSquare(moveData[0]);
         var oppTargetSquare = RtsChess.idxToSquare(moveData[1]);
         Meteor.call('makeMove', {

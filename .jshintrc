@@ -87,6 +87,7 @@
     "white"         : false,    // true: Check against strict whitespace and indentation rules
     "globals"       : {
       // App-specific globals
+      "ChessAi": true,
       "Collections": true,
       "Module": true,
       "TimeSync": true,

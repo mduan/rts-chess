@@ -141,6 +141,7 @@ Template.board.onCreated(function() {
     cooldown: new ReactiveVar(),
     pendingMoves: new ReactiveVar([])
   };
+  this.lastMoveIdx = 0;
 
   this.autorun(function() {
     var data = Template.currentData();
@@ -166,6 +167,7 @@ Template.board.onCreated(function() {
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch()[0];
     var positions = lastMove.positions;
+    self.lastMoveIdx = lastMove.moveIdx;
 
     var pendingMoves = self.reactiveVars.pendingMoves;
 
@@ -296,6 +298,22 @@ Template.board.onRendered(function() {
             pendingMoves.get().splice(index, 1);
           }
         });
+
+        var oppColor = RtsChess.swapColor(self.data.color);
+        var fen = chess.getFen(
+          oppColor,
+          self.lastMoveIdx + 1
+        );
+        var moveData = ChessAi.findMove(fen);
+        var oppSourceSquare = RtsChess.idxToSquare(moveData[0]);
+        var oppTargetSquare = RtsChess.idxToSquare(moveData[1]);
+        Meteor.call('makeMove', {
+          gameId: self.data.gameId,
+          source: oppSourceSquare,
+          target: oppTargetSquare,
+          color: oppColor
+        });
+
         $sourceImg.remove();
       }
     }

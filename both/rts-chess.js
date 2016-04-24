@@ -242,8 +242,8 @@ var RtsChess = (function() {
       }
     },
 
-    getFen: function() {
-      var fen = '';
+    getFen: function(color, moveNumber) {
+      var fenBoard = '';
 
       for (var rowIdx = RtsChess.NUM_ROWS - 1; rowIdx >= 0; --rowIdx) {
         for (var colIdx = 0; colIdx < RtsChess.NUM_COLS; ++colIdx) {
@@ -256,28 +256,34 @@ var RtsChess = (function() {
             } else {
               pieceFen = piece[1].toLowerCase();
             }
-            fen += pieceFen;
+            fenBoard += pieceFen;
           } else {
-            fen += '1';
+            fenBoard += '1';
           }
         }
 
         if (rowIdx !== 0) {
-          fen += '/';
+          fenBoard += '/';
         }
       }
 
-      // squeeze the numbers together
-      // haha, I love this solution...
-      fen = fen.replace(/11111111/g, '8');
-      fen = fen.replace(/1111111/g, '7');
-      fen = fen.replace(/111111/g, '6');
-      fen = fen.replace(/11111/g, '5');
-      fen = fen.replace(/1111/g, '4');
-      fen = fen.replace(/111/g, '3');
-      fen = fen.replace(/11/g, '2');
+      fenBoard = fenBoard.replace(/11111111/g, '8');
+      fenBoard = fenBoard.replace(/1111111/g, '7');
+      fenBoard = fenBoard.replace(/111111/g, '6');
+      fenBoard = fenBoard.replace(/11111/g, '5');
+      fenBoard = fenBoard.replace(/1111/g, '4');
+      fenBoard = fenBoard.replace(/111/g, '3');
+      fenBoard = fenBoard.replace(/11/g, '2');
 
-      return fen;
+      var fenArr = [
+        fenBoard,
+        color,
+        '-', /* castles */
+        '-', /* en passant */
+        '0', /* timeout */
+        moveNumber
+      ];
+      return fenArr.join(' ');
     }
   });
 
@@ -292,6 +298,15 @@ var RtsChess = (function() {
 
   RtsChess.toSquare = function(rowIdx, colIdx) {
     return String.fromCharCode('a'.charCodeAt(0) + colIdx) + (rowIdx + 1);
+  };
+
+  RtsChess.idxToSquare = function(idx) {
+    var ROW_LEN = 10;
+    var COL_PADDING = 2;
+    var ROW_PADDING = 1;
+    var rowIdx = Math.floor(idx / ROW_LEN) - COL_PADDING;
+    var colIdx = (idx % ROW_LEN) - ROW_PADDING;
+    return RtsChess.toSquare(rowIdx, colIdx);
   };
 
   RtsChess.fromMovePositions = function(movePositions) {

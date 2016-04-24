@@ -259,9 +259,14 @@ Template.board.onCreated(function() {
     }
 
     var lastMove = Move.find(
-      {boardId: self.data.boardId},
+      {boardId: data.boardId},
       {sort: {moveIdx: -1}, limit: 1}
     ).fetch()[0];
+
+    if (!lastMove) {
+      return;
+    }
+
     var positions = lastMove.positions;
 
     var pendingMoves = self.reactiveVars.pendingMoves;
@@ -274,7 +279,7 @@ Template.board.onCreated(function() {
         var isValid = chess.makeMove({
           source: pendingMove.source,
           target: pendingMove.target,
-          color: self.data.color
+          color: data.color
         });
         if (isValid) {
           delete positions[pendingMove.source];

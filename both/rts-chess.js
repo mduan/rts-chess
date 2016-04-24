@@ -240,6 +240,44 @@ var RtsChess = (function() {
         this.winner = WHITE;
         return;
       }
+    },
+
+    getFen: function() {
+      var fen = '';
+
+      for (var rowIdx = RtsChess.NUM_ROWS - 1; rowIdx >= 0; --rowIdx) {
+        for (var colIdx = 0; colIdx < RtsChess.NUM_COLS; ++colIdx) {
+          var square = RtsChess.toSquare(rowIdx, colIdx);
+          if (square in this.positions) {
+            var piece = this.positions[square];
+            var pieceFen;
+            if (piece[0] === RtsChess.WHITE) {
+              pieceFen = piece[1].toUpperCase();
+            } else {
+              pieceFen = piece[1].toLowerCase();
+            }
+            fen += pieceFen;
+          } else {
+            fen += '1';
+          }
+        }
+
+        if (rowIdx !== 0) {
+          fen += '/';
+        }
+      }
+
+      // squeeze the numbers together
+      // haha, I love this solution...
+      fen = fen.replace(/11111111/g, '8');
+      fen = fen.replace(/1111111/g, '7');
+      fen = fen.replace(/111111/g, '6');
+      fen = fen.replace(/11111/g, '5');
+      fen = fen.replace(/1111/g, '4');
+      fen = fen.replace(/111/g, '3');
+      fen = fen.replace(/11/g, '2');
+
+      return fen;
     }
   });
 

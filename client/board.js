@@ -416,8 +416,10 @@ Template.board.events({
       return;
     }
 
-    var square = $target.closest('.board-square').attr('data-square');
-    if (template.cooldownAnimator.isAnimating(square)) {
+    var $boardSquare = $target.closest('.board-square');
+    var square = $boardSquare.attr('data-square');
+    if (template.cooldownAnimator.isAnimating(square) ||
+        $boardSquare.attr('data-pendingMove')) {
       return;
     }
 

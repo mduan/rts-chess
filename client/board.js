@@ -148,14 +148,20 @@ function getSquareBounds($squares) {
 Template.board.onCreated(function() {
   var self = this;
 
-  this.subscribe('move');
-
   this.reactiveVars = {
     squares: new ReactiveDict(),
     cooldown: new ReactiveVar(),
     pendingMoves: new ReactiveVar([]),
     gameInProgress: new ReactiveVar()
   };
+
+  this.autorun(function() {
+    var data = Template.currentData();
+    if (!data.boardId) {
+      return;
+    }
+    self.subscribe('move', {boardId: data.boardId});
+  });
 
   function updateSquares(positions) {
     RtsChess.getSquares().forEach(function(rowSquares) {

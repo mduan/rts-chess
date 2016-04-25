@@ -5,17 +5,17 @@ var Move = Collections.Move;
 var RtsChess = Module.RtsChess;
 var required = Module.Helper.required;
 
-Meteor.publish('user', function() {
-  return User.find();
+Meteor.publish('user', function(options) {
+  return User.find(options);
 });
-Meteor.publish('game', function() {
-  return Game.find();
+Meteor.publish('game', function(options) {
+  return Game.find(options);
 });
-Meteor.publish('board', function() {
-  return Board.find();
+Meteor.publish('board', function(options) {
+  return Board.find(options);
 });
-Meteor.publish('move', function() {
-  return Move.find();
+Meteor.publish('move', function(options) {
+  return Move.find(options);
 });
 
 function getGameUsers(options) {

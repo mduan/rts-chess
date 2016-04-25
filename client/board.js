@@ -405,12 +405,13 @@ Template.board.events({
 
     var $target = $(e.target);
     var template = Template.instance();
+    var data = Template.currentData();
 
-    if (!template.data.gameStarted || template.data.gameEnded) {
+    if (!data.gameStarted || data.gameEnded) {
       return;
     }
 
-    var playerColor = template.data.color;
+    var playerColor = data.color;
     if (this.color !== playerColor) {
       return;
     }

@@ -398,9 +398,12 @@ Template.board.events({
     }
 
     var $boardSquare = $target.closest('.board-square');
+    if ($boardSquare.hasClass('board-pendingMove')) {
+      return;
+    }
+
     var square = $boardSquare.attr('data-square');
-    if (template.cooldownAnimator.isAnimating(square) ||
-        $boardSquare.attr('data-pendingMove')) {
+    if (template.cooldownAnimator.isAnimating(square)) {
       return;
     }
 

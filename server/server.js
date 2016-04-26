@@ -2,20 +2,48 @@ var User = Collections.User;
 var Game = Collections.Game;
 var Board = Collections.Board;
 var Move = Collections.Move;
-var RtsChess = Module.RtsChess;
 var required = Module.Helper.required;
 
-Meteor.publish('user', function(options) {
-  return User.find(options);
+Meteor.publish('user', function() {
+  return User.find();
 });
-Meteor.publish('game', function(options) {
-  return Game.find(options);
+Meteor.publish('game', function(gameId) {
+  return Game.find({_id: gameId});
 });
 Meteor.publish('board', function(options) {
   return Board.find(options);
 });
 Meteor.publish('move', function(options) {
   return Move.find(options);
+});
+
+Meteor.publishComposite('gameData', function(gameId) {
+  return {
+    find: function() {
+      return Game.find({_id: gameId});
+    },
+    children: [{
+      find: function(game) {
+        return Board.find({gameId: game._id});
+      },
+      children: [{
+        find: function(board) {
+          return Move.find({boardId: board._id});
+        }
+      }]
+    }, {
+      find: function(game) {
+        var userIds = [];
+        if (game.whiteUserId) {
+          userIds.push(game.whiteUserId);
+        }
+        if (game.blackUserId) {
+          userIds.push(game.blackUserId);
+        }
+        return User.find({_id: {$in: userIds}});
+      }
+    }]
+  };
 });
 
 function getGameUsers(options) {
@@ -50,8 +78,13 @@ function getGameUsers(options) {
 }
 
 function createBoard(gameId) {
+  var game = Game.findOne(gameId);
   var boardId = Board.insert({
-    gameId: gameId
+    gameId: game._id,
+    cooldown: game.cooldown,
+    whiteUserId: game.whiteUserId,
+    blackUserId: game.blackUserId,
+    computerDifficulty: game.computerDifficulty
   });
 
   Game.update(gameId, {$set: {currBoardId: boardId}});
@@ -169,7 +202,10 @@ Meteor.methods({
           unsetData.blackUserId = true;
           unsetData.blackUserReady = true;
         }
-        User.remove(gameUsers.opp._id);
+        // TODO: Currently can't remove the user since that gets the
+        // front-end has reactive functions that try to find the removed
+        // user before the game's users are removed.
+        // User.remove(gameUsers.opp._id);
         Game.update(gameId, {$unset: unsetData});
       }
     } else if (oppType === RtsChess.OPP_TYPE_COMPUTER) {
@@ -281,26 +317,21 @@ Meteor.methods({
 
   resignBoard: function(options) {
     var gameId = required(options.gameId);
-    var userId = required(options.userId);
+    var winner = required(options.winner);
     var game = Game.findOne(gameId);
 
     if (!game.currBoardId) {
       return {success: false};
     }
 
-    var winner;
     var gameUsers = getGameUsers(game);
     var whiteUserReady = false;
     var blackUserReady = false;
-    if (userId === game.whiteUserId) {
-      winner = RtsChess.BLACK;
-      if (gameUsers.opp.isComputer) {
-        blackUserReady = true;
-      }
-    } else {
-      winner = RtsChess.WHITE;
-      if (gameUsers.opp.isComputer) {
+    if (gameUsers.opp.isComputer) {
+      if (gameUsers.opp._id === game.whiteUserId) {
         whiteUserReady = true;
+      } else {
+        blackUserReady = true;
       }
     }
 
@@ -362,7 +393,10 @@ Meteor.methods({
       });
 
       if (chess.getWinner()) {
-        Board.update(boardId, {$set: {winner: chess.getWinner()}});
+        Meteor.call('resignBoard', {
+          gameId: board.gameId,
+          winner: chess.getWinner()
+        });
       }
 
       return {success: true};

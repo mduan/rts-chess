@@ -1,4 +1,4 @@
-var RtsChess = (function() {
+RtsChess = (function() {
   var BLACK = 'b';
   var WHITE = 'w';
   var KING = 'K';
@@ -353,5 +353,3 @@ var RtsChess = (function() {
 
   return RtsChess;
 })();
-
-Module.RtsChess = RtsChess;

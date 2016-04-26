@@ -24,3 +24,5 @@ reactive-dict
 standard-minifier-css
 standard-minifier-js
 mduan:timesync
+reywood:publish-composite
+dburles:collection-helpers

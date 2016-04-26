@@ -1,9 +1,31 @@
-var RtsChess = Module.RtsChess;
 var User = Collections.User;
+var Game = Collections.Game;
 
-function isGameInProgress(data) {
-  return !!(!data.board.winner && data.board._id);
-}
+Router.route('/game/:gameId', {
+
+  loadingTemplate: 'loading',
+
+  template: 'game',
+
+  waitOn: function() {
+    var userId = Session.get('userId');
+    var gameDataCursor = this.subscribe('gameData', this.params.gameId);
+    Meteor.call('joinGame', {gameId: this.params.gameId, userId: userId},
+      function() {
+        Session.set('hasJoinedGame');
+      }
+    );
+    return [gameDataCursor, Session.get('hasJoinedGame')];
+  },
+
+  data: function() {
+    return Game.findOne(this.params.gameId);
+  },
+
+  action: function() {
+    this.render();
+  }
+});
 
 Template.registerHelper('toFloat', function(str) {
   return parseFloat(str);
@@ -15,7 +37,7 @@ Template.registerHelper('equal', function(val1, val2) {
 
 Template.game.helpers({
   isBlack: function() {
-    return this.myUser.color === RtsChess.BLACK;
+    return this.myUser().color === RtsChess.BLACK;
   },
 
   whiteColor: function() {
@@ -34,12 +56,8 @@ Template.game.helpers({
     return RtsChess.OPP_TYPE_HUMAN;
   },
 
-  isHumanOpp: function() {
-    return !!(this.oppUser && !this.oppUser.isComputer);
-  },
-
   oppComputerDisabled: function() {
-    if (this.oppUser && !this.oppUser.isComputer) {
+    if (this.isHumanOpp()) {
       return 'disabled';
     } else {
       return null;
@@ -100,7 +118,7 @@ Template.game.helpers({
     var template = Template.instance();
     var data = template.data;
     if (Session.get('userId') !== data.createdById ||
-        isGameInProgress(data)) {
+        data.isInProgress()) {
       template.reactiveVars.settingsDisabled.set(true);
       return 'disabled';
     } else {
@@ -109,43 +127,32 @@ Template.game.helpers({
     }
   },
 
-  isGameOver: function() {
-    return !!this.board.winner;
-  },
-
-  isGameInProgress: function() {
-    return isGameInProgress(this);
-  },
-
   status: function() {
-    if (this.board.winner) {
-      if (this.board.winner === this.myUser.color) {
-        return 'Congrats! You win :)';
-      } else {
-        return 'Sorry. You lost :(';
-      }
-    } else if (!this.oppUser) {
-      return 'Waiting for opponent to join';
-    } else if (!this.myUser.isReady) {
-      return 'Click "Start" to begin';
-    } else if (!this.board._id) {
-      return 'Waiting for opponent to click "Start"';
-    } else {
+    if (this.isInProgress()) {
       return null;
+    } else if (this.isOver()) {
+      if (this.myUser().isReady) {
+        return 'Waiting for opponent to click "Start"';
+      } else if (this.isWinner()) {
+        return 'Congrats! You win :) Play again?';
+      } else {
+        return 'Sorry. You lost :( Play again?';
+      }
+    } else {
+      if (!this.oppUser()) {
+        return 'Waiting for opponent to join';
+      } else if (!this.myUser().isReady) {
+        return 'Click "Start" to begin';
+      } else {
+        return 'Waiting for opponent to click "Start"';
+      }
     }
   },
 
   boardData: function() {
     return {
-      gameId: this._id,
-      boardId: this.board._id,
-      // TODO(mduan): Normalize gameStarted and gameOver into one field
-      gameStarted: !!this.board._id,
-      gameEnded: !!this.board.winner,
-      color: this.myUser.color,
-      cooldown: this.cooldown,
-      isOppComputer: this.isOppComputer,
-      computerDifficulty: this.computerDifficulty
+      color: this.myUser().color,
+      board: this.getBoard()
     };
   }
 });
@@ -225,10 +232,9 @@ Template.game.events({
   },
 
   'click .resignBtn .button': function() {
-    var userId = Session.get('userId');
     Meteor.call('resignBoard', {
       gameId: this._id,
-      userId: userId
+      winner: RtsChess.swapColor(this.myUser().color)
     });
   }
 });

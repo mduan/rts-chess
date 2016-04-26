@@ -25,11 +25,11 @@
     <div class="oppTypeBtns row">
       <div class="label">Versus</div>
       <div class="ui basic buttons field">
-        <div class="ui {{disabled}} {{oppComputerDisabled}} button {{#if isOppComputer}}active{{/if}}" data-value="{{oppTypeComputer}}">Computer</div>
-        <div class="ui {{disabled}} button {{#unless isOppComputer}}active{{/unless}}" data-value="{{oppTypeHuman}}">Human</div>
+        <div class="ui {{disabled}} {{oppComputerDisabled}} button {{#if isComputerOpp}}active{{/if}}" data-value="{{oppTypeComputer}}">Computer</div>
+        <div class="ui {{disabled}} button {{#unless isComputerOpp}}active{{/unless}}" data-value="{{oppTypeHuman}}">Human</div>
       </div>
     </div>
-    {{#if isOppComputer}}
+    {{#if isComputerOpp}}
       <div class="computerDifficultyBtns row">
         <div class="label">Difficulty</div>
         <div class="ui basic buttons field">
@@ -73,34 +73,23 @@
         <div class="ui {{disabled}} button {{#if isBlack}}active{{/if}}" data-color="{{blackColor}}">Black</div>
       </div>
     </div>
-    <!--
-    <div class="versusBtns row">
-      <div class="label">Versus</div>
-      <div class="ui basic buttons field">
-        <div class="ui {{disabled}} button active">Human</div>
-        <div class="ui {{disabled}} button">Computer</div>
-      </div>
-    </div>
-    -->
-    {{#unless isHumanOpp}}
-      <div class="shareUrl">
-        <div class="shareUrlText">Share the url to play with a friend</div>
-        <div class="shareUrlInput row">
-          <div class="ui action input field">
-            <input type="text" readonly value={{gameUrl}}>
-            <button class="ui icon button copyUrlBtn" title="Copy URL">
-              <i class="copy icon"></i>
-            </button>
-          </div>
+    <div class="shareUrl">
+      <div class="shareUrlText">Share the url to play with a friend</div>
+      <div class="shareUrlInput row">
+        <div class="ui action input field">
+          <input type="text" readonly value={{gameUrl}}>
+          <button class="ui icon button copyUrlBtn" title="Copy URL">
+            <i class="copy icon"></i>
+          </button>
         </div>
       </div>
-    {{/unless}}
-    {{#if isGameOver}}
+    </div>
+    {{#if isOver}}
       <div class="startBtn row">
         <div class="ui {{#unless oppUser}}disabled{{/unless}} primary button">Play again</div>
       </div>
     {{else}}
-      {{#if isGameInProgress}}
+      {{#if isInProgress}}
         <div class="resignBtn row">
           <div class="ui primary button">Resign</div>
         </div>

@@ -90,6 +90,7 @@
       "ChessAi": true,
       "Collections": true,
       "Module": true,
+      "RtsChess": true,
       "TimeSync": true,
       "User": true,
 

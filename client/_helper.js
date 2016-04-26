@@ -1,8 +1,9 @@
 var reactiveUser = new ReactiveVar();
+
 var userHandle = Meteor.subscribe('user');
 
 Tracker.autorun(function(computation) {
-  if (!userHandle.ready()) {
+  if (!userHandle || !userHandle.ready()) {
     return;
   }
 

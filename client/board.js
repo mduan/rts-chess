@@ -397,6 +397,9 @@ Template.board.events({
 
     var playerColor = data.color;
     if (this.color !== playerColor) {
+      /* jshint ignore:start */
+      console.log('not my color', this.color)
+      /* jshint ignore:end */
       return;
     }
 

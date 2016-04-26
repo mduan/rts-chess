@@ -162,11 +162,7 @@ Template.board.onCreated(function() {
       rowSquares.forEach(function(square) {
         if (square in positions) {
           var position = positions[square];
-          self.reactiveVars.squares.set(square, {
-            lastMoveTime: position.lastMoveTime,
-            isPendingMove: position.isPendingMove,
-            piece: position.piece
-          });
+          self.reactiveVars.squares.set(square, position);
         } else {
           self.reactiveVars.squares.set(square, null);
         }
@@ -278,6 +274,13 @@ Template.board.onCreated(function() {
         pendingMoves.get().splice(index, 1);
       }
     });
+
+    var square = chess.getKingSquare(data.color);
+    if (square) {
+      if (chess.isAttacked(square, data.color)) {
+        positions[square].isAttacked = true;
+      }
+    }
 
     updateSquares(positions);
   });
@@ -443,11 +446,10 @@ Template.board.helpers({
           currColor = RtsChess.swapColor(currColor);
         }
         var pieceData = template.reactiveVars.squares.get(square);
-        var data = {
-          isPendingMove: !!(pieceData && pieceData.isPendingMove),
+        var data = _.extend(pieceData || {}, {
           square: square,
           color: currColor
-        };
+        });
         row.push(data);
       });
       rows.push(row);

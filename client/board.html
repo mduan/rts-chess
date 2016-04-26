@@ -3,7 +3,7 @@
   {{#each row in rows}}
     <div class="board-row">
       {{#each square in row}}
-        <div class="board-square board-{{square.color}} {{#if square.isPendingMove}}board-pendingMove{{/if}}" data-square={{square.square}}>
+        <div class="board-square board-{{square.color}} {{#if square.isAttacked}}board-attacked{{/if}} {{#if square.isPendingMove}}board-pendingMove{{/if}}" data-square={{square.square}}>
           {{#with piece square.square}}
             <img src={{iconUrl}}>
           {{/with}}

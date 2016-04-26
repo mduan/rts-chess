@@ -17,6 +17,7 @@ RtsChess = (function() {
   };
   /* jshint +W101 */
 
+  // TODO: Move static functions out of prototype
   function RtsChess(options) {
     options = options || {};
     if (options.positions) {
@@ -33,19 +34,8 @@ RtsChess = (function() {
       return this.positions;
     },
 
-    isValidSquare: function(square) {
-      var col = square[0];
-      var row = square[1];
-      return col >= 'a' && col <= 'h' && row >= '1' && row <= '8';
-    },
-
     isOccupied: function(square) {
       return square in this.positions;
-    },
-
-    isGameOver: function() {
-      // TODO (mduan): Implement
-      return false;
     },
 
     getPieceColor: function(square) {
@@ -192,8 +182,8 @@ RtsChess = (function() {
         return false;
       }
 
-      if (!this.isValidSquare(source)
-        || !this.isValidSquare(target)) {
+      if (!RtsChess.isValidSquare(source)
+        || !RtsChess.isValidSquare(target)) {
         return false;
       }
 
@@ -223,22 +213,111 @@ RtsChess = (function() {
       return this.winner;
     },
 
+    isChecked: function(color) {
+      var square = this.getKingSquare(color);
+      if (!square) {
+        return false;
+      }
+      return this.isAttacked(square, color);
+    },
+
+    // Is square attacked by color?
+    isAttacked: function(square, color) {
+      // Rook directions
+      var specs = [{
+        pieces: [ROOK, QUEEN],
+        multiple: true,
+        directions: [[1, 0], [0, 1], [-1, 0], [0, -1]]
+      }, {
+        pieces: [BISHOP, QUEEN],
+        multiple: true,
+        directions: [[1, -1], [1, 1], [-1, -1], [-1, 1]]
+      }, {
+        pieces: [KNIGHT],
+        multiple: false,
+        directions: [
+          [1, -2], [2, -1], [2, 1], [1, 2],
+          [-1, -2], [-2, -1], [-2, 1], [-1, 2]
+        ]
+      }, {
+        pieces: [KING],
+        multiple: false,
+        directions: [
+          [1, -1], [1, 0], [1, 1], [0, 1],
+          [-1, -1], [-1, 0], [-1, 1], [0, -1]
+        ],
+      }, {
+        pieces: [PAWN],
+        multiple: false,
+        directions: {
+          white: [[1, -1], [1, 1]],
+          black: [[-1, -1], [-1, 1]]
+        }
+      }];
+
+      var rowIdx = this.getRowIdx(square);
+      var colIdx = this.getColIdx(square);
+      var positions = this.positions;
+
+      var isAttacked = specs.some(function(spec) {
+        var directions;
+        if (color === WHITE && spec.directions.white) {
+          directions = spec.directions.white;
+        } else if (color === BLACK && spec.directions.black) {
+          directions = spec.directions.black;
+        } else {
+          directions = spec.directions;
+        }
+        return directions.some(function(dir) {
+          var currRowIdx = rowIdx;
+          var currColIdx = colIdx;
+          while (true) {
+            currRowIdx += dir[0];
+            currColIdx += dir[1];
+            var square = RtsChess.toSquare(currRowIdx, currColIdx);
+            if (!RtsChess.isValidSquare(square)) {
+              return false;
+            }
+
+            if (square in positions) {
+              var piece = positions[square];
+              if (piece[0] === color) {
+                return false;
+              }
+              if (spec.pieces.indexOf(piece[1]) < 0) {
+                return false;
+              }
+              return true;
+            }
+
+            if (!spec.multiple) {
+              return false;
+            }
+          }
+        });
+      });
+
+      return isAttacked;
+    },
+
+    getKingSquare: function(color) {
+      // TODO: Do this in a cleaner way
+      var kingSquare;
+      _.find(this.positions, function(piece, square) {
+        if (piece === color + KING) {
+          kingSquare = square;
+          return true;
+        }
+      });
+      return kingSquare;
+    },
+
     // TODO(mduan): Handle when both kings are gone?
     computeWinner: function() {
-      var hasWhiteKing = _.any(this.positions, function(piece) {
-        return piece === WHITE + KING;
-      });
-      if (!hasWhiteKing) {
+      if (!this.getKingSquare(WHITE)) {
         this.winner = BLACK;
-        return;
-      }
-
-      var hasBlackKing = _.any(this.positions, function(piece) {
-        return piece === BLACK + KING;
-      });
-      if (!hasBlackKing) {
+      } else if (!this.getKingSquare(BLACK)) {
         this.winner = WHITE;
-        return;
       }
     },
 
@@ -326,6 +405,15 @@ RtsChess = (function() {
     } else {
       return WHITE;
     }
+  };
+
+  RtsChess.isValidSquare = function(square) {
+    var col = square[0];
+    var row = square[1];
+    return (
+      square.length === 2 &&
+      col >= 'a' && col <= 'h' && row >= '1' && row <= '8'
+    );
   };
 
   RtsChess.getSquares = function(color) {

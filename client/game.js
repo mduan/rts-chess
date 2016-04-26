@@ -9,13 +9,25 @@ Router.route('/game/:gameId', {
 
   waitOn: function() {
     var userId = Session.get('userId');
-    var gameDataCursor = this.subscribe('gameData', this.params.gameId);
-    Meteor.call('joinGame', {gameId: this.params.gameId, userId: userId},
+    var gameId = this.params.gameId;
+    Meteor.call('joinGame', {gameId: gameId, userId: userId},
       function() {
-        Session.set('hasJoinedGame');
+        var gameDataCursor = Meteor.subscribe('gameData', gameId);
+        Tracker.autorun(function(computation) {
+          if (gameDataCursor.ready()) {
+            Session.set('hasJoinedGame', true);
+            computation.stop();
+          }
+        });
       }
     );
-    return [gameDataCursor, Session.get('hasJoinedGame')];
+
+    return {
+      ready: function() {
+        var hasJoinedGame = Session.get('hasJoinedGame');
+        return hasJoinedGame;
+      }
+    };
   },
 
   data: function() {
@@ -150,9 +162,14 @@ Template.game.helpers({
   },
 
   boardData: function() {
+    // TODO: This is needed to fix race-condition where new users are returned
+    // by the User collection, but this.data still has the old users for
+    // white/blackUserId (think of the case when a human joins replacing
+    // a computer player).
+    var data = Template.currentData();
     return {
-      color: this.myUser().color,
-      board: this.getBoard()
+      color: data.myUser().color,
+      board: data.getBoard()
     };
   }
 });

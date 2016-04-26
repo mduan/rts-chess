@@ -4,10 +4,6 @@ var Board = Collections.Board;
 var Move = Collections.Move;
 var required = Module.Helper.required;
 
-Meteor.publish('user', function() {
-  return User.find();
-});
-
 Meteor.publishComposite('gameData', function(gameId) {
   return {
     find: function() {
@@ -75,6 +71,10 @@ Meteor.methods({
 
   resetMoves: function() {
     Move.remove({});
+  },
+
+  findUser: function(userId) {
+    return {success: !!User.findOne(userId)};
   },
 
   createGame: function(options) {

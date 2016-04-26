@@ -1,30 +1,29 @@
-User = {
-  getUser: function() {
-    return reactiveUser.get();
-  }
-};
-
 var reactiveUser = new ReactiveVar();
-var userHandle = Meteor.subscribe('user');
 
-Tracker.autorun(function(computation) {
-  if (!userHandle.ready()) {
-    return;
-  }
+function createUser() {
+  Meteor.call('createUser', function(_, result) {
+    Session.setPersistent('userId', result.userId);
+    reactiveUser.set(true);
+  });
+}
 
-  var user;
-  var userId = Session.get('userId');
-  if (userId) {
-    user = Collections.User.findOne(userId);
-  }
-  if (!user) {
-    Meteor.call('createUser', function(_, result) {
-      var userId = result.userId;
-      Session.setPersistent('userId', userId);
-    });
-    return;
-  }
+var userId = Session.get('userId');
+if (userId) {
+  Meteor.call('findUser', userId, function(_, result) {
+    if (result.success) {
+      reactiveUser.set(true);
+    } else {
+      createUser();
+    }
+  });
+} else {
+  createUser();
+}
 
-  reactiveUser.set(user);
-  computation.stop();
+Router.onBeforeAction(function() {
+  if (reactiveUser.get()) {
+    this.next();
+  } else {
+    this.render('loading');
+  }
 });

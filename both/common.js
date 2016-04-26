@@ -183,6 +183,5 @@ Meteor.methods({
     if (!_.isEmpty(updateData)) {
       User.update(userId, {$set: updateData});
     }
-  },
-
+  }
 });

@@ -51,6 +51,12 @@ Meteor.methods({
       updateData.computerDifficulty = computerDifficulty;
     }
 
+    var computerFrequency = options.computerFrequency;
+    if (_.isFinite(computerFrequency) &&
+        computerFrequency !== game.computerFrequency) {
+      updateData.computerFrequency = computerFrequency;
+    }
+
     if (!_.isEmpty(updateData)) {
       Game.update(gameId, {$set: updateData});
     }

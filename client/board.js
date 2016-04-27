@@ -205,8 +205,10 @@ Template.board.onCreated(function() {
       color: oppColor
     });
 
-    var delay = (6 - difficulty) * 1000;
-    self.computerMoveTimer = setTimeout(makeComputerMove, delay);
+    self.computerMoveTimer = setTimeout(
+      makeComputerMove,
+      data.board.computerFrequency
+    );
   }
 
   this.autorun(function() {

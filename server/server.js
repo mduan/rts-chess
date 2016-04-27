@@ -40,7 +40,8 @@ function createBoard(gameId) {
     cooldown: game.cooldown,
     whiteUserId: game.whiteUserId,
     blackUserId: game.blackUserId,
-    computerDifficulty: game.computerDifficulty
+    computerDifficulty: game.computerDifficulty,
+    computerFrequency: game.computerFrequency
   });
 
   Game.update(gameId, {$set: {currBoardId: boardId}});
@@ -87,11 +88,12 @@ Meteor.methods({
     // TODO: Refactor hardcoded values
     var gameId = Game.insert({
       computerDifficulty: 2,
+      computerFrequency: 2000,
       createdById: userId,
       whiteUserId: userId,
       blackUserId: createUserResult.userId,
       blackUserReady: true,
-      cooldown: 3000
+      cooldown: 5000,
     });
 
     return {gameId: gameId};

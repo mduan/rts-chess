@@ -26,45 +26,6 @@
           {{/with}}
         </div>
       </div>
-      <div class="oppTypeBtns row">
-        <div class="label">
-          Versus
-          <sup><i class="help circle icon" title="Choose whether to play against a computer or a human."></i></sup>
-        </div>
-        <div class="ui basic buttons field">
-          <div class="ui {{disabled}} {{oppComputerDisabled}} button {{#if isComputerOpp}}active{{/if}}" data-value="{{oppTypeComputer}}">Computer</div>
-          <div class="ui {{disabled}} button {{#unless isComputerOpp}}active{{/unless}}" data-value="{{oppTypeHuman}}">Human</div>
-        </div>
-      </div>
-      {{#if isComputerOpp}}
-        <div class="computerDifficultyBtns row">
-          <div class="label">
-            Difficulty
-            <sup><i class="help circle icon" title="Choose the difficulty level of the computer. Higher is more difficult."></i></sup>
-          </div>
-          <div class="ui basic buttons field">
-            {{#each computerDifficultyChoices}}
-              <div class="ui button {{disabled}} {{#if selected}}active{{/if}}" data-value={{value}}>{{label}}</div>
-            {{/each}}
-          </div>
-        </div>
-      {{else}}
-        <div class="oppUsername row">
-          <div class="label">
-            Opponent
-            <sup><i class="help circle icon" title="The name of your opponent."></i></sup>
-          </div>
-          <div class="ui input disabled field">
-            {{#with oppUser}}
-              <div class="ui input field">
-                <input type="text" value={{username}}>
-              </div>
-            {{else}}
-              <input type="text" value="Waiting for opponent">
-            {{/with}}
-          </div>
-        </div>
-      {{/if}}
       <div class="cooldownDropdown row">
         <div class="label">
           Cooldown
@@ -92,6 +53,58 @@
           <div class="ui {{disabled}} button {{#if isBlack}}active{{/if}}" data-color="{{blackColor}}">Black</div>
         </div>
       </div>
+      <div class="oppTypeBtns row">
+        <div class="label">
+          Versus
+          <sup><i class="help circle icon" title="Choose whether to play against a computer or a human."></i></sup>
+        </div>
+        <div class="ui basic buttons field">
+          <div class="ui {{disabled}} {{oppComputerDisabled}} button {{#if isComputerOpp}}active{{/if}}" data-value="{{oppTypeComputer}}">Computer</div>
+          <div class="ui {{disabled}} button {{#unless isComputerOpp}}active{{/unless}}" data-value="{{oppTypeHuman}}">Human</div>
+        </div>
+      </div>
+      {{#if isComputerOpp}}
+        <div class="computerDifficultyBtns row">
+          <div class="label">
+            Difficulty
+            <sup><i class="help circle icon" title="Choose the difficulty level of the computer. Higher is more difficult."></i></sup>
+          </div>
+          <div class="ui basic buttons field">
+            {{#each computerDifficultyChoices}}
+              <div class="ui button {{disabled}} {{#if selected}}active{{/if}}" data-value={{value}}>{{label}}</div>
+            {{/each}}
+          </div>
+        </div>
+        <div class="computerFrequencyDropdown row">
+          <div class="label">
+            Frequency
+            <sup><i class="help circle icon" title="Minimum time between computer moves."></i></sup>
+          </div>
+          <select class="ui {{disabled}} dropdown field">
+            {{#each computerFrequencyChoices}}
+              <option value={{value}} selected={{selected}}>
+                {{label}} seconds
+              </option>
+            {{/each}}
+          </select>
+        </div>
+      {{else}}
+        <div class="oppUsername row">
+          <div class="label">
+            Opponent
+            <sup><i class="help circle icon" title="The name of your opponent."></i></sup>
+          </div>
+          <div class="ui input disabled field">
+            {{#with oppUser}}
+              <div class="ui input field">
+                <input type="text" value={{username}}>
+              </div>
+            {{else}}
+              <input type="text" value="Waiting for opponent">
+            {{/with}}
+          </div>
+        </div>
+      {{/if}}
       {{#unless isObserver}}
         <div class="shareUrl">
           <div class="shareUrlText">Share link below to play with a friend</div>

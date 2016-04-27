@@ -81,12 +81,38 @@ Template.game.helpers({
     var choices = [
       {label: '1', value: 1},
       {label: '2', value: 2},
-      {label: '3', value: 3}
+      {label: '3', value: 3},
+      {label: '4', value: 4}
     ];
 
     var computerDifficulty = this.computerDifficulty;
     choices.some(function(choice) {
       if (computerDifficulty === choice.value) {
+        choice.selected = true;
+        return true;
+      }
+    });
+
+    return choices;
+  },
+
+  computerFrequencyChoices: function() {
+    var choices = [
+      {label: '1.0', value: 1000},
+      {label: '2.0', value: 2000},
+      {label: '3.0', value: 3000},
+      {label: '5.0', value: 5000},
+      {label: '10.0', value: 10000},
+      {label: '15.0', value: 15000},
+      {label: '20.0', value: 20000},
+      {label: '30.0', value: 30000},
+      {label: '45.0', value: 45000},
+      {label: '60.0', value: 60000}
+    ];
+
+    var computerFrequency = this.computerFrequency;
+    choices.some(function(choice) {
+      if (computerFrequency === choice.value) {
         choice.selected = true;
         return true;
       }
@@ -291,18 +317,27 @@ Template.game.onRendered(function() {
     Tracker.afterFlush(function() {
       // Need to reattach dropdown to pick up reactive changes to the
       // cooldown value
-      if (settingsDisabled) {
-        self.$('.ui.dropdown').addClass('disabled');
-      } else {
-        self.$('.ui.dropdown').removeClass('disabled');
-      }
-      self.$('.ui.dropdown').dropdown({
-        onChange: function(value) {
-          Meteor.call('updateGame', {
-            gameId: gameId,
-            cooldown: parseInt(value)
-          });
+      var dropdowns = [{
+        field: 'cooldown',
+        $dropdown: self.$('.cooldownDropdown .ui.dropdown')
+      }, {
+        field: 'computerFrequency',
+        $dropdown: self.$('.computerFrequencyDropdown .ui.dropdown')
+      }];
+      dropdowns.forEach(function(dropdown) {
+        var $dropdown = dropdown.$dropdown;
+        if (settingsDisabled) {
+          $dropdown.addClass('disabled');
+        } else {
+          $dropdown.removeClass('disabled');
         }
+        $dropdown.dropdown({
+          onChange: function(value) {
+            var requestData = {gameId: gameId};
+            requestData[dropdown.field] = parseInt(value);
+            Meteor.call('updateGame', requestData);
+          }
+        });
       });
     });
   });

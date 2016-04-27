@@ -11,11 +11,14 @@ Meteor.publishComposite('gameData', function(gameId) {
     },
     children: [{
       find: function(game) {
-        return Board.find({gameId: game._id});
+        return Board.find({_id: game.currBoardId});
       },
       children: [{
         find: function(board) {
-          return Move.find({boardId: board._id});
+          return Move.find(
+            {boardId: board._id},
+            {sort: {moveIdx: -1}, limit: 1}
+          );
         }
       }]
     }, {

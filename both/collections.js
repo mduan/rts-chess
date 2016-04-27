@@ -11,35 +11,55 @@ Collections = {
 };
 
 function getGameUsers(options) {
-  var myUser = User.findOne(Session.get('userId'));
-  if (myUser._id === options.whiteUserId) {
-    _.extend(myUser, {
-      color: RtsChess.WHITE,
-      isReady: options.whiteUserReady
-    });
-  } else {
-    _.extend(myUser, {
-      color: RtsChess.BLACK,
-      isReady: options.blackUserReady
-    });
+  var userId = Session.get('userId');
+  // TODO: Currently handle null if User.findOne() returns null. But this
+  // really shouldn't be happening. It's happening because the User collection
+  // is reactively changing, but old blaze data (i.e. old white/blackUserId)
+  // are used for the User.findOne().
+
+  var whiteUser;
+  if (options.whiteUserId) {
+    whiteUser = User.findOne(options.whiteUserId);
+    if (whiteUser) {
+      _.extend(whiteUser, {
+        color: RtsChess.WHITE,
+        isReady: options.whiteUserReady
+      });
+    }
+  }
+  var blackUser;
+  if (options.blackUserId) {
+    blackUser = User.findOne(options.blackUserId);
+    if (blackUser) {
+      _.extend(blackUser, {
+        color: RtsChess.BLACK,
+        isReady: options.blackUserReady
+      });
+    }
   }
 
+  var myUser;
   var oppUser;
-  if (myUser._id === options.whiteUserId && options.blackUserId) {
-    oppUser = User.findOne(options.blackUserId);
-    _.extend(oppUser, {
-      color: RtsChess.BLACK,
-      isReady: options.blackUserReady
-    });
-  } else if (myUser._id === options.blackUserId && options.whiteUserId) {
-    oppUser = User.findOne(options.whiteUserId);
-    _.extend(oppUser, {
-      color: RtsChess.WHITE,
-      isReady: this.whiteUserReady
-    });
+  var isObserver = false;
+  if (userId && userId === options.blackUserId) {
+    myUser = blackUser;
+    oppUser = whiteUser;
+  } else if (userId && userId === options.whiteUserId) {
+    myUser = whiteUser;
+    oppUser = blackUser;
+  } else {
+    if (options.whiteUserId === options.createdById) {
+      myUser = whiteUser;
+      oppUser = blackUser;
+    } else {
+      myUser = blackUser;
+      oppUser = whiteUser;
+    }
+    isObserver = true;
   }
 
   return {
+    isObserver: isObserver,
     myUser: myUser,
     oppUser: oppUser
   };
@@ -86,6 +106,18 @@ Board.helpers({
 
   isWinner: function() {
     return this.myUser().color === this.winner;
+  },
+
+  isWhiteWinner: function() {
+    return RtsChess.WHITE === this.winner;
+  },
+
+  isBlackWinner: function() {
+    return RtsChess.BLACK === this.winner;
+  },
+
+  isObserver: function() {
+    return getGameUsers(this).isObserver;
   }
 });
 
@@ -131,5 +163,20 @@ Game.helpers({
   isWinner: function() {
     var board = this.getBoard();
     return !!(board && board.isWinner());
+  },
+
+  isWhiteWinner: function() {
+    var board = this.getBoard();
+    return !!(board && board.isWhiteWinner());
+  },
+
+  isBlackWinner: function() {
+    var board = this.getBoard();
+    return !!(board && board.isBlackWinner());
+  },
+
+  isObserver: function() {
+    var gameUsers = getGameUsers(this);
+    return gameUsers.isObserver;
   }
 });

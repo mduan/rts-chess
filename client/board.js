@@ -172,6 +172,7 @@ Template.board.onCreated(function() {
 
   function makeComputerMove() {
     var data = self.data;
+
     if (!data.board || !data.board.isInProgress()) {
       return;
     }
@@ -225,11 +226,10 @@ Template.board.onCreated(function() {
     if (self.computerMoveTimer) {
       clearTimeout(self.computerMoveTimer);
     }
-    if (data.board.isComputerOpp()) {
+    if (data.board.isComputerOpp() && !data.board.isObserver()) {
       self.computerMoveTimer = setTimeout(makeComputerMove, 1000);
     }
   });
-
 
   this.autorun(function() {
     var data = Template.currentData();
@@ -390,6 +390,10 @@ Template.board.events({
     var $target = $(e.target);
     var template = Template.instance();
     var data = Template.currentData();
+
+    if (data.board.isObserver()) {
+      return;
+    }
 
     if (!data.board.isInProgress()) {
       return;

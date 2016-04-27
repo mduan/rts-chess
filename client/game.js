@@ -1,6 +1,8 @@
 var User = Collections.User;
 var Game = Collections.Game;
 
+var hasJoinedGame = new ReactiveVar();
+
 Router.route('/game/:gameId', {
 
   loadingTemplate: 'loading',
@@ -15,7 +17,7 @@ Router.route('/game/:gameId', {
         var gameDataCursor = Meteor.subscribe('gameData', gameId);
         Tracker.autorun(function(computation) {
           if (gameDataCursor.ready()) {
-            Session.set('hasJoinedGame', true);
+            hasJoinedGame.set(true);
             computation.stop();
           }
         });
@@ -24,8 +26,7 @@ Router.route('/game/:gameId', {
 
     return {
       ready: function() {
-        var hasJoinedGame = Session.get('hasJoinedGame');
-        return hasJoinedGame;
+        return hasJoinedGame.get();
       }
     };
   },
@@ -140,20 +141,29 @@ Template.game.helpers({
   },
 
   status: function() {
-    if (this.isInProgress()) {
+    var data = Template.currentData();
+    if (data.isInProgress()) {
       return null;
-    } else if (this.isOver()) {
-      if (this.myUser().isReady) {
+    } else if (data.isOver()) {
+      if (data.isObserver()) {
+        if (data.isWhiteWinner()) {
+          return 'White wins';
+        } else {
+          return 'Black wins';
+        }
+      } else if (data.myUser().isReady) {
         return 'Waiting for opponent to click "Start"';
-      } else if (this.isWinner()) {
+      } else if (data.isWinner()) {
         return 'Congrats! You win :) Play again?';
       } else {
         return 'Sorry. You lost :( Play again?';
       }
     } else {
-      if (!this.oppUser()) {
+      if (data.isObserver()) {
+        return 'Waiting for game to start';
+      } else if (!data.oppUser()) {
         return 'Waiting for opponent to join';
-      } else if (!this.myUser().isReady) {
+      } else if (!data.myUser().isReady) {
         return 'Click "Start" to begin';
       } else {
         return 'Waiting for opponent to click "Start"';
@@ -162,10 +172,6 @@ Template.game.helpers({
   },
 
   boardData: function() {
-    // TODO: This is needed to fix race-condition where new users are returned
-    // by the User collection, but this.data still has the old users for
-    // white/blackUserId (think of the case when a human joins replacing
-    // a computer player).
     var data = Template.currentData();
     return {
       color: data.myUser().color,

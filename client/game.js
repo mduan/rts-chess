@@ -100,6 +100,7 @@ Template.game.helpers({
 
   computerFrequencyChoices: function() {
     var choices = [
+      {label: '0.5', value: 500},
       {label: '1.0', value: 1000},
       {label: '2.0', value: 2000},
       {label: '3.0', value: 3000},
@@ -310,6 +311,12 @@ Template.game.onRendered(function() {
   var self = this;
 
   this.$('[title]').popup();
+
+  //function clickStartBtn() {
+  //  self.$('.startBtn .button').click();
+  //  setTimeout(clickStartBtn, 2000);
+  //}
+  //clickStartBtn();
 
   this.autorun(function() {
     var gameId = self.reactiveVars._id.get();

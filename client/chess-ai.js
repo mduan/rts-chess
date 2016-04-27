@@ -697,7 +697,7 @@ function p4_optimise_piece_list(state){
     }
 }
 
-function p4_findmoves(state, level, colour, ep){
+function p4_findmove(state, level, colour, ep){
     p4_prepare(state);
     p4_optimise_piece_list(state);
     var board = state.board;
@@ -706,26 +706,21 @@ function p4_findmoves(state, level, colour, ep){
         ep = state.enpassant;
     }
     var movelist = p4_parse(state, colour, ep, 0);
-    var movescores = []
-    movelist.forEach(function(move) {
-      movescores.push(move[0]);
-    });
     var alpha = P4_MIN_SCORE;
     var mv, t, i;
     var bs = 0;
     var be = 0;
 
     if (level <= 0){
-        return movelist;
-        //for (i = 0; i < movelist.length; i++){
-        //    mv = movelist[i];
-        //    if(movelist[i][0] > alpha){
-        //        alpha = mv[0];
-        //        bs = mv[1];
-        //        be = mv[2];
-        //    }
-        //}
-        //return [bs, be, alpha];
+        for (i = 0; i < movelist.length; i++){
+            mv = movelist[i];
+            if(movelist[i][0] > alpha){
+                alpha = mv[0];
+                bs = mv[1];
+                be = mv[2];
+            }
+        }
+        return [bs, be, alpha];
     }
 
     var new_movelist = [];
@@ -737,27 +732,22 @@ function p4_findmoves(state, level, colour, ep){
         if (mscore > P4_WIN){
             //p4_log("XXX taking king! it should never come to this");
             alpha = P4_KING_VALUE;
-            //bs = ms;
-            //be = me;
-            new_movelist.push([ms, me, P4_KING_VALUE]);
+            bs = ms;
+            be = me;
             break;
         }
         t = -state.treeclimber(state, level - 1, 1 - colour, mscore, ms, me,
                                P4_MIN_SCORE, -alpha);
         if (t > alpha){
-            new_movelist.push([ms, me, t]);
             alpha = t;
-            //bs = ms;
-            //be = me;
-        } else {
-            new_movelist.push([ms, me, mscore]);
+            bs = ms;
+            be = me;
         }
     }
-    //if (alpha < -P4_WIN_NOW && ! p4_check_check(state, colour)){
-    //    alpha = state.stalemate_scores[colour];
-    //}
-    //return [bs, be, alpha];
-    return new_movelist;
+    if (alpha < -P4_WIN_NOW && ! p4_check_check(state, colour)){
+        alpha = state.stalemate_scores[colour];
+    }
+    return [bs, be, alpha];
 }
 
 /*p4_make_move changes the state and returns an object containing
@@ -1347,8 +1337,8 @@ function p4_fen2state(fen, state){
     state.move = function(s, e, promotion){
         return p4_move(this, s, e, promotion);
     };
-    state.findmoves = function(level){
-        return p4_findmoves(this, level);
+    state.findmove = function(level){
+        return p4_findmove(this, level);
     };
     state.jump_to_moveno = function(moveno){
         return p4_jump_to_moveno(this, moveno);
@@ -1600,9 +1590,9 @@ function p4_random_int(state, top){
 }
 
 ChessAi = {
-  findMoves: function(fen, depth) {
+  findMove: function(fen, depth) {
     var state = p4_fen2state(fen);
-    return state.findmoves(depth);
+    return state.findmove(depth);
   }
 };
 

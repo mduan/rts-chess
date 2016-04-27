@@ -49,8 +49,19 @@ var CooldownAnimator = (function() {
         lastMoveAdjustedTime = currTime;
       }
 
+      var remainingTime;
+      if (elapsedTime > this.cooldown) {
+        remainingTime = 0;
+      } else {
+        if (elapsedTime < 0) {
+          remainingTime = this.cooldown;
+        } else {
+          remainingTime = this.cooldown - elapsedTime;
+        }
+      }
       return {
         cooldown: true,
+        remainingTime: remainingTime,
         lastMoveAdjustedTime: lastMoveAdjustedTime
       };
     },
@@ -199,57 +210,28 @@ Template.board.onCreated(function() {
       lastMove.lastMoveIdx + 1
     );
 
-    var moves = ChessAi.findMoves(fen, 4 /*depth*/);
-    moves.sort(function(move1, move2) {
-      return move2[2] - move1[2];
-    });
-
-    // Drop low-quality moves
-    var bestMoveScore;
-    if (moves.length) {
-      bestMoveScore = moves[0][2];
-    }
-    moves = moves.filter(function(move) {
-      return (
-        ((bestMoveScore - move[2]) / bestMoveScore) < 0.5 ||
-        (bestMoveScore - move[2] < 25)
-      );
-    });
-
-    moves = moves.filter(function(move) {
-      var sourceIdx = move[0];
-      var square = RtsChess.idxToSquare(sourceIdx);
-      var pieceData = positions[square];
-      var cooldownData = self.cooldownAnimator.getCooldownData(
-        pieceData.lastMoveTime
-      );
-      return !cooldownData.cooldown;
-    });
-
-    if (moves.length) {
-      // TODO: Pass mAX_DIFFICULTY in as a param
-      var MAX_DIFFICULTY = 4;
-      var difficulty = data.board.computerDifficulty;
-      var maxCandidateMoves = MAX_DIFFICULTY + 1 - difficulty;
-      var randomMoveIdx = Math.floor(
-        Math.random() * Math.min(moves.length, maxCandidateMoves)
-      );
-      var candidateMove = moves[randomMoveIdx];
-
-      var oppSourceSquare = RtsChess.idxToSquare(candidateMove[0]);
-      var oppTargetSquare = RtsChess.idxToSquare(candidateMove[1]);
+    var move = ChessAi.findMove(fen, data.board.computerDifficulty - 1);
+    var oppSourceSquare = RtsChess.idxToSquare(move[0]);
+    var oppTargetSquare = RtsChess.idxToSquare(move[1]);
+    var pieceData = positions[oppSourceSquare];
+    var cooldownData = self.cooldownAnimator.getCooldownData(
+      pieceData.lastMoveTime
+    );
+    if (cooldownData.cooldown) {
+      self.computerMoveTimer = setTimeout(makeComputerMove, 500);
+    } else {
       Meteor.call('makeMove', {
         boardId: data.board._id,
         source: oppSourceSquare,
         target: oppTargetSquare,
         color: oppColor
       });
-    }
 
-    self.computerMoveTimer = setTimeout(
-      makeComputerMove,
-      data.board.computerFrequency
-    );
+      self.computerMoveTimer = setTimeout(
+        makeComputerMove,
+        data.board.computerFrequency
+      );
+    }
   }
 
   this.autorun(function() {

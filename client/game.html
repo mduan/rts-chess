@@ -1,5 +1,5 @@
 <template name="game">
-<div class="gameContainer">
+<div class="gamePage">
   <h1 class="title">Real-Time Chess</h1>
   <div class="game">
     <div class="boardContainer">
@@ -14,7 +14,10 @@
     </div>
     <div class="info">
       <div class="myUsername row">
-        <div class="label">Name</div>
+        <div class="label">
+          Name
+          <sup><i class="help circle icon" title="Enter your name."></i></sup>
+        </div>
         <div class="ui input field">
           {{#with myUser}}
             <div class="ui input field">
@@ -24,7 +27,10 @@
         </div>
       </div>
       <div class="oppTypeBtns row">
-        <div class="label">Versus</div>
+        <div class="label">
+          Versus
+          <sup><i class="help circle icon" title="Choose whether to play against a computer or a human."></i></sup>
+        </div>
         <div class="ui basic buttons field">
           <div class="ui {{disabled}} {{oppComputerDisabled}} button {{#if isComputerOpp}}active{{/if}}" data-value="{{oppTypeComputer}}">Computer</div>
           <div class="ui {{disabled}} button {{#unless isComputerOpp}}active{{/unless}}" data-value="{{oppTypeHuman}}">Human</div>
@@ -32,7 +38,10 @@
       </div>
       {{#if isComputerOpp}}
         <div class="computerDifficultyBtns row">
-          <div class="label">Difficulty</div>
+          <div class="label">
+            Difficulty
+            <sup><i class="help circle icon" title="Choose the difficulty level of the computer. Higher is more difficult."></i></sup>
+          </div>
           <div class="ui basic buttons field">
             {{#each computerDifficultyChoices}}
               <div class="ui button {{disabled}} {{#if selected}}active{{/if}}" data-value={{value}}>{{label}}</div>
@@ -41,7 +50,10 @@
         </div>
       {{else}}
         <div class="oppUsername row">
-          <div class="label">Opponent</div>
+          <div class="label">
+            Opponent
+            <sup><i class="help circle icon" title="The name of your opponent."></i></sup>
+          </div>
           <div class="ui input disabled field">
             {{#with oppUser}}
               <div class="ui input field">
@@ -54,7 +66,10 @@
         </div>
       {{/if}}
       <div class="cooldownDropdown row">
-        <div class="label">Cooldown</div>
+        <div class="label">
+          Cooldown
+          <sup><i class="help circle icon" title="How long you have to wait before moving the same piece again."></i></sup>
+        </div>
         <select class="ui {{disabled}} dropdown field">
           {{#each cooldownChoices}}
             <option value={{value}} selected={{selected}}>
@@ -68,7 +83,10 @@
         </select>
       </div>
       <div class="colorBtns row">
-        <div class="label">Color</div>
+        <div class="label">
+          Color
+          <sup><i class="help circle icon" title="The color you play as."></i></sup>
+        </div>
         <div class="ui basic buttons field">
           <div class="ui {{disabled}} button {{#unless isBlack}}active{{/unless}}" data-color="{{whiteColor}}">White</div>
           <div class="ui {{disabled}} button {{#if isBlack}}active{{/if}}" data-color="{{blackColor}}">Black</div>
@@ -76,7 +94,7 @@
       </div>
       {{#unless isObserver}}
         <div class="shareUrl">
-          <div class="shareUrlText">Share the url to play with a friend</div>
+          <div class="shareUrlText">Share link below to play with a friend</div>
           <div class="shareUrlInput row">
             <div class="ui action input field">
               <input type="text" readonly value={{gameUrl}}>
@@ -103,6 +121,11 @@
         {{/if}}
       {{/unless}}
     </div>
+  </div>
+  <div class="gameDescription">
+    Welcome to real-time chess. Unlike normal chess, there are no turns.
+    You'll have to think quick if you want to win. Play against a computer
+    or invite a friend to play with.
   </div>
 </div>
 </template>

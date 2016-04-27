@@ -3,7 +3,7 @@
 
 @borderColor: #aaa;
 
-.gameContainer {
+.gamePage {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -66,11 +66,22 @@
         justify-content: center;
       }
 
+      .help.icon {
+        display: none;
+      }
+      &:hover .help.icon {
+        display: inline-block;
+        position: relative;
+        top: 8px;
+        left: 1px;
+      }
+
       .label {
         display: flex;
         width: 80px;
         align-items: center;
         font-weight: bold;
+
       }
 
       .input.field {
@@ -79,7 +90,15 @@
     }
 
     .shareUrlText {
+      margin-top: 10px;
       margin-bottom: 5px;
+      text-align: center;
     }
+  }
+
+  .gameDescription {
+    font-size: 16px;
+    margin-top: 10px;
+    width: 700px;
   }
 }

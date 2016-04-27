@@ -1,67 +1,85 @@
 @import 'lib/semantic-ui/site/globals/site.variables.import.less';
 @import 'lib/semantic-ui/themes/default/globals/site.variables.import.less';
 
-.game {
+@borderColor: #aaa;
+
+.gameContainer {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 50px;
 
-  .boardContainer {
-    position: relative;
-    display: block;
+  .title {
+    font-size: 48px;
+    line-height: 2;
+  }
 
-    .statusContainer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      display: flex;
-      width: 100%;
-      height: 100%;
-      align-items: center;
-      justify-content: center;
-      background-color: rgba(255,255,255,0.5);
+  .game {
+    display: flex;
+    border: 1px solid @borderColor;
 
-      .status {
-        background-color: rgba(255,255,255,0.9);
-        padding: 10px;
-        border-radius: @defaultBorderRadius;
-        box-shadow: 0 0 3px 0 rgba(0,0,0,0.6);
+    .boardContainer {
+      position: relative;
+      display: block;
+
+      .statusContainer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(255,255,255,0.5);
+
+        .status {
+          background-color: rgba(255,255,255,0.9);
+          padding: 10px;
+          border-radius: @defaultBorderRadius;
+          box-shadow: 0 0 3px 0 rgba(0,0,0,0.6);
+        }
       }
     }
-  }
 
-  .info {
-    margin-left: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-
-  .row {
-    margin-bottom: 1em;
-    display: flex;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    &.startBtn,
-    &.resignBtn {
-      margin-top: 30px;
+    .info {
+      background-color: #fbfdfd;
+      border-left: 1px solid @borderColor;
+      padding-left: 25px;
+      padding-right: 25px;
+      display: flex;
+      flex-direction: column;
       justify-content: center;
     }
 
-    .label {
+    .row {
+      margin-bottom: 1em;
       display: flex;
-      width: 80px;
-      align-items: center;
-      font-weight: bold;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      &.startBtn,
+      &.resignBtn {
+        margin-top: 30px;
+        justify-content: center;
+      }
+
+      .label {
+        display: flex;
+        width: 80px;
+        align-items: center;
+        font-weight: bold;
+      }
+
+      .input.field {
+        flex: 1;
+      }
     }
 
-    .input.field {
-      flex: 1;
+    .shareUrlText {
+      margin-bottom: 5px;
     }
-  }
-
-  .shareUrlText {
-    margin-bottom: 5px;
   }
 }

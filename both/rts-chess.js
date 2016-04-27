@@ -399,6 +399,14 @@ RtsChess = (function() {
     return new RtsChess({positions: positions});
   };
 
+  RtsChess.getPieceColor = function(piece) {
+    return piece[0];
+  };
+
+  RtsChess.getPieceType = function(piece) {
+    return piece[1];
+  };
+
   RtsChess.swapColor = function(color) {
     if (color === WHITE) {
       return BLACK;

@@ -192,16 +192,26 @@ Template.board.onCreated(function() {
       lastMove.lastMoveIdx + 1
     );
 
-    var difficulty = data.board.computerDifficulty;
-    var depth = 4;
-    var moves = ChessAi.findMoves(fen, depth, function(sourceIdx) {
-      var square = RtsChess.idxToSquare(sourceIdx);
-      //if (square === 'b8' || square === 'f4' || square === 'f5') {
-      //  return false;
-      //} else {
-      //  return true;
-      //}
+    var moves = ChessAi.findMoves(fen, 4 /*depth*/);
+    moves.sort(function(move1, move2) {
+      return move2[2] - move1[2];
+    });
 
+    // Drop low-quality moves
+    var bestMoveScore;
+    if (moves.length) {
+      bestMoveScore = moves[0][2];
+    }
+    moves = moves.filter(function(move) {
+      return (
+        ((bestMoveScore - move[2]) / bestMoveScore) < 0.5 ||
+        (bestMoveScore - move[2] < 25)
+      );
+    });
+
+    moves = moves.filter(function(move) {
+      var sourceIdx = move[0];
+      var square = RtsChess.idxToSquare(sourceIdx);
       var pieceData = positions[square];
       var cooldownData = self.cooldownAnimator.getCooldownData(
         pieceData.lastMoveTime
@@ -209,27 +219,15 @@ Template.board.onCreated(function() {
       return !cooldownData.cooldown;
     });
 
-    // TODO: Pass mAX_DIFFICULTY in as a param
-    var MAX_DIFFICULTY = 4;
-    var candidateMoves = [];
-    var maxCandidateMoves = MAX_DIFFICULTY + 1 - difficulty;
-    moves.forEach(function(move) {
-      if (candidateMoves.length >= maxCandidateMoves) {
-        candidateMoves.sort(function(move1, move2) {
-          return move2[2] - move1[2];
-        });
-        var lastIdx = candidateMoves.length - 1;
-        if (move[2] > candidateMoves[lastIdx][2]) {
-          candidateMoves[lastIdx] = move;
-        }
-      } else {
-        candidateMoves.push(move);
-      }
-    });
-
-    if (candidateMoves.length) {
-      var randomMoveIdx = Math.floor(Math.random() * candidateMoves.length);
-      var candidateMove = candidateMoves[randomMoveIdx];
+    if (moves.length) {
+      // TODO: Pass mAX_DIFFICULTY in as a param
+      var MAX_DIFFICULTY = 4;
+      var difficulty = data.board.computerDifficulty;
+      var maxCandidateMoves = MAX_DIFFICULTY + 1 - difficulty;
+      var randomMoveIdx = Math.floor(
+        Math.random() * Math.min(moves.length, maxCandidateMoves)
+      );
+      var candidateMove = moves[randomMoveIdx];
 
       var oppSourceSquare = RtsChess.idxToSquare(candidateMove[0]);
       var oppTargetSquare = RtsChess.idxToSquare(candidateMove[1]);

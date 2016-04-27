@@ -710,12 +710,6 @@ function p4_findmoves(state, level, colour, ep){
     movelist.forEach(function(move) {
       movescores.push(move[0]);
     });
-    if (state.validateMoveFn) {
-      var origNumMoves = movelist.length;
-      movelist = movelist.filter(function(mv) {
-        return state.validateMoveFn(mv[1], mv[2]);
-      });
-    }
     var alpha = P4_MIN_SCORE;
     var mv, t, i;
     var bs = 0;
@@ -742,7 +736,7 @@ function p4_findmoves(state, level, colour, ep){
         var me = mv[2];
         if (mscore > P4_WIN){
             //p4_log("XXX taking king! it should never come to this");
-            //alpha = P4_KING_VALUE;
+            alpha = P4_KING_VALUE;
             //bs = ms;
             //be = me;
             new_movelist.push([ms, me, P4_KING_VALUE]);
@@ -750,12 +744,14 @@ function p4_findmoves(state, level, colour, ep){
         }
         t = -state.treeclimber(state, level - 1, 1 - colour, mscore, ms, me,
                                P4_MIN_SCORE, -alpha);
-        new_movelist.push([ms, me, t]);
-        //if (t > alpha){
-        //    alpha = t;
-        //    bs = ms;
-        //    be = me;
-        //}
+        if (t > alpha){
+            new_movelist.push([ms, me, t]);
+            alpha = t;
+            //bs = ms;
+            //be = me;
+        } else {
+            new_movelist.push([ms, me, mscore]);
+        }
     }
     //if (alpha < -P4_WIN_NOW && ! p4_check_check(state, colour)){
     //    alpha = state.stalemate_scores[colour];
@@ -1604,9 +1600,8 @@ function p4_random_int(state, top){
 }
 
 ChessAi = {
-  findMoves: function(fen, depth, validateMoveFn) {
+  findMoves: function(fen, depth) {
     var state = p4_fen2state(fen);
-    state.validateMoveFn = validateMoveFn;
     return state.findmoves(depth);
   }
 };

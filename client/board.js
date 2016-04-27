@@ -12,6 +12,13 @@ var CooldownAnimator = (function() {
       window.requestAnimationFrame(this.tick.bind(this));
     },
 
+    reset: function() {
+      var self = this;
+      _.each(this.lastMoveTimes, function(_, square) {
+        self.stopAnimation(square);
+      });
+    },
+
     getSquareEl: function(square) {
       return this.$board.find('[data-square="' + square + '"]');
     },
@@ -250,6 +257,7 @@ Template.board.onCreated(function() {
     if (!data.board) {
       return;
     }
+    self.cooldownAnimator.reset();
     self.cooldownAnimator.setCooldown(data.board.cooldown);
   });
 

@@ -383,16 +383,15 @@ Template.board.onRendered(function() {
     self.$dragTarget = null;
     self.$dragPiece = null;
   });
+});
 
-  var data = this.data;
-  var template = self;
-  // Can't do this in Template.board.events because we manipulate the DOM
-  // during the move of a piece (i.e. remove the old piece on a successful
-  // move), which sometimes seems to screw up blaze's diffing, causing the
-  // event not to fire when it's in Template.board.events. Moving here to
-  // see if this fixes the issue.
-  this.$('.board-square img').on('mousedown', function(e) {
+Template.board.events({
+  'mousedown .board-square img': function(e) {
     e.preventDefault();
+
+    var $target = $(e.target);
+    var template = Template.instance();
+    var data = Template.currentData();
 
     if (data.board.isObserver()) {
       return;
@@ -402,12 +401,11 @@ Template.board.onRendered(function() {
       return;
     }
 
-    var $target = $(e.target);
-
     var playerColor = data.color;
-    var piece = $target.attr('data-piece');
-    var pieceColor = RtsChess.getPieceColor(piece);
-    if (pieceColor !== playerColor) {
+    if (this.color !== playerColor) {
+      /* jshint ignore:start */
+      console.log('not my color', this.color)
+      /* jshint ignore:end */
       return;
     }
 
@@ -440,7 +438,7 @@ Template.board.onRendered(function() {
 
     $target.hide();
     template.$dragSource = $target.closest('.board-square');
-  });
+  }
 });
 
 Template.board.helpers({
@@ -468,7 +466,7 @@ Template.board.helpers({
     return rows;
   },
 
-  pieceData: function(square) {
+  piece: function(square) {
     var template = Template.instance();
 
     var pieceData = template.reactiveVars.squares.get(square);
@@ -480,7 +478,8 @@ Template.board.helpers({
 
       return {
         iconUrl: '/img/chesspieces/wikipedia/' + pieceData.piece + '.png',
-        piece: pieceData.piece
+        // TODO(mduan): Refactor this
+        color: pieceData.piece[0]
       };
     } else {
       cooldownAnimator.stopAnimation(square);

@@ -49,6 +49,11 @@ var CooldownAnimator = (function() {
     },
 
     startAnimation: function(square, lastMoveTime) {
+      // The board has not been initially rendered yet.
+      if (!this.$board) {
+        return;
+      }
+
       var cooldownData = this.getCooldownData(lastMoveTime);
       if (!cooldownData.cooldown) {
         return;

@@ -193,22 +193,53 @@ Template.board.onCreated(function() {
     );
 
     var difficulty = data.board.computerDifficulty;
-    var moveData = ChessAi.findMove(fen, difficulty - 1, function(sourceIdx) {
+    var depth = 4;
+    var moves = ChessAi.findMoves(fen, depth, function(sourceIdx) {
       var square = RtsChess.idxToSquare(sourceIdx);
+      //if (square === 'b8' || square === 'f4' || square === 'f5') {
+      //  return false;
+      //} else {
+      //  return true;
+      //}
+
       var pieceData = positions[square];
       var cooldownData = self.cooldownAnimator.getCooldownData(
         pieceData.lastMoveTime
       );
       return !cooldownData.cooldown;
     });
-    var oppSourceSquare = RtsChess.idxToSquare(moveData[0]);
-    var oppTargetSquare = RtsChess.idxToSquare(moveData[1]);
-    Meteor.call('makeMove', {
-      boardId: data.board._id,
-      source: oppSourceSquare,
-      target: oppTargetSquare,
-      color: oppColor
+
+    // TODO: Pass mAX_DIFFICULTY in as a param
+    var MAX_DIFFICULTY = 4;
+    var candidateMoves = [];
+    var maxCandidateMoves = MAX_DIFFICULTY + 1 - difficulty;
+    moves.forEach(function(move) {
+      if (candidateMoves.length >= maxCandidateMoves) {
+        candidateMoves.sort(function(move1, move2) {
+          return move2[2] - move1[2];
+        });
+        var lastIdx = candidateMoves.length - 1;
+        if (move[2] > candidateMoves[lastIdx][2]) {
+          candidateMoves[lastIdx] = move;
+        }
+      } else {
+        candidateMoves.push(move);
+      }
     });
+
+    if (candidateMoves.length) {
+      var randomMoveIdx = Math.floor(Math.random() * candidateMoves.length);
+      var candidateMove = candidateMoves[randomMoveIdx];
+
+      var oppSourceSquare = RtsChess.idxToSquare(candidateMove[0]);
+      var oppTargetSquare = RtsChess.idxToSquare(candidateMove[1]);
+      Meteor.call('makeMove', {
+        boardId: data.board._id,
+        source: oppSourceSquare,
+        target: oppTargetSquare,
+        color: oppColor
+      });
+    }
 
     self.computerMoveTimer = setTimeout(
       makeComputerMove,

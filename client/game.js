@@ -11,18 +11,20 @@ Router.route('/game/:gameId', {
 
   waitOn: function() {
     var userId = Session.get('userId');
-    var gameId = this.params.gameId;
-    Meteor.call('joinGame', {gameId: gameId, userId: userId},
-      function() {
-        var gameDataCursor = Meteor.subscribe('gameData', gameId);
-        Tracker.autorun(function(computation) {
-          if (gameDataCursor.ready()) {
-            hasJoinedGame.set(true);
-            computation.stop();
-          }
-        });
-      }
-    );
+    if (userId) {
+      var gameId = this.params.gameId;
+      Meteor.call('joinGame', {gameId: gameId, userId: userId},
+        function() {
+          var gameDataCursor = Meteor.subscribe('gameData', gameId);
+          Tracker.autorun(function(computation) {
+            if (gameDataCursor.ready()) {
+              hasJoinedGame.set(true);
+              computation.stop();
+            }
+          });
+        }
+      );
+    }
 
     return {
       ready: function() {

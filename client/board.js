@@ -395,12 +395,13 @@ Template.board.onRendered(function() {
             pendingMoves.get().splice(index, 1);
           }
         });
-
-        $sourceImg.remove();
+      } else {
+        $sourceImg.show();
       }
+    } else {
+      $sourceImg.show();
     }
 
-    $sourceImg.show();
     self.$dragPiece.remove();
 
     self.$dragSource = null;
